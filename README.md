@@ -1,3 +1,4 @@
+<pre> ```bash
 src/
 ├── assets/             # Imagens, ícones, fontes, etc.
 ├── components/         # Componentes React reutilizáveis (botões, cards, modais, etc.)
@@ -25,3 +26,4 @@ src/
 ├── App.jsx             # Componente principal da aplicação
 ├── main.jsx            # Ponto de entrada da aplicação
 ├── routes.jsx          # Definição das rotas da aplicação
+``` </pre>
