@@ -1,5 +1,4 @@
-<pre> 
-src/
+<pre> src/
 ├── assets/             # Imagens, ícones, fontes, etc.
 ├── components/         # Componentes React reutilizáveis (botões, cards, modais, etc.)
 │   ├── common/         # Componentes genéricos
