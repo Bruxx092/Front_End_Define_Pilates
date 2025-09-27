@@ -1,3 +1,24 @@
+# ▶️ Como Rodar o Projeto
+
+## 1.  Clone o repositório:  
+```bash
+git clone (https://github.com/Bruxx092/Front_End_Define_Pilates.git)
+  ```
+## 2.  Instale as dependências:
+  ```bash
+npm install
+```
+## 3. Rode o projeto em ambiente de desenvolvimento:
+  ```bash
+npm run dev
+```
+## 4.  Para gerar o build de produção:
+ ```bash
+npm run build
+```
+
+# 📂 Estrutura de Pastas
+
 <pre> src/
 ├── assets/             # Imagens, ícones, fontes, etc.
 ├── components/         # Componentes React reutilizáveis (botões, cards, modais, etc.)
@@ -26,3 +47,17 @@
 ├── main.jsx            # Ponto de entrada da aplicação
 ├── routes.jsx          # Definição das rotas da aplicação
 </pre>
+
+# 🚀 Tecnologias Utilizadas
+
+- Vite — Bundler rápido para desenvolvimento e build
+
+- React — Biblioteca para construção de interfaces
+
+- Node.js — Ambiente de execução backend
+
+- React Router — Controle de rotas e navegação
+
+- Tailwind CSS — Estilização rápida e responsiva
+
+- Context API & Hooks — Gerenciamento de estado e lógica reutilizável
