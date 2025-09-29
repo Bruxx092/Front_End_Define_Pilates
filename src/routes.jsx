@@ -5,17 +5,15 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import SignIn from "./pages/Auth/SignIn";
 import Login from "./pages/Auth/Login";
-import AdminDashboard from "./pages/Dashboard/AdminDashboard";
-import StudentDashboard from "./pages/Dashboard/StudentDashboard";
-import InstructorDashboard from "./pages/Dashboard/InstructorDashboard";
-import ReceptionistDashboard from "./pages/Dashboard/ReceptionistDashboard";
 
 function AppRoutes() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/signin" replace />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/student/dashboard" element={<StudentDashboard />} />
