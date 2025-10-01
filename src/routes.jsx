@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import SignIn from "./pages/Auth/SignIn";
 import Login from "./pages/Auth/Login";
+import MonthlyClasses from "./pages/Auth/MonthlyClasses";
 
 function AppRoutes() {
   return (
@@ -15,6 +16,7 @@ function AppRoutes() {
         <Route path="/" element={<Navigate to="/signin" replace />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/classes" element={<MonthlyClasses />} />
       </Routes>
     </Router>
   );
