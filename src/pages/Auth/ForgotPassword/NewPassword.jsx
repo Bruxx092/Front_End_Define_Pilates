@@ -24,6 +24,7 @@ const NewPassword = () => {
     if (senhaCadastrada) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-shadow-green-200">
+                <img src={Logo_Sem_Contorno} alt="Logo da Empresa" className="w-40 mb-4" />
                 <div className="flex flex-col items-center p-8 bg-white rounded-lg shadow-md w-96">
                     <div className="flex items-center justify-center p-8 bg-shadow-green-500 rounded-md">
                         <h2 className="text-xl font-bold text-white text-center">
