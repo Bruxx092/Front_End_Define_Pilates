@@ -1,8 +1,19 @@
 import React from 'react';
+import {useNavigate} from 'react-router-dom';
 
-const UserCard = ({ title, icon: Icon, description }) => {
+const UserCard = ({ title, icon: Icon, description, to }) => {
+    const navigate = useNavigate();
+
+    const handleClick = () => {
+        if (to) {
+            navigate(to);
+        }
+    };
+
     return (
-        <div className = "w-64 flex flex-col items-center p-6 bg-white rounded-lg shadow-md cursor-pointer hover:shadow-xl transition-shadow duration-300">
+        <div className = "w-64 flex flex-col items-center p-6 bg-white rounded-lg shadow-md cursor-pointer hover:shadow-xl transition-shadow duration-300"
+             onClick={handleClick}
+        >
             <div className='w-16 h-16 mb-4'>
                 <Icon className="w-full h-full text-gray-700"/>
             </div>
