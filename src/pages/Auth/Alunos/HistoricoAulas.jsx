@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '../../../components/ui/input';
-import { CheckCircle, XCircle, FileText, MoreVertical } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, MoreVertical, ArrowLeft } from 'lucide-react';
 
 const Checkbox = ({ checked, onChange }) => (
     <input 
@@ -24,9 +24,6 @@ export default function HistoricoAulasPage() {
 
     const fetchAulas = async (inicio, fim) => {
         console.log("Chamando API com intervalo:", inicio, fim);
-        // FUTURO: trocar por chamada real, ex:
-        // const res = await fetch(`/api/aulas?start=${inicio}&end=${fim}`);
-        // const data = await res.json();
 
         const mockData = [
             { id: 1, aula: "Aula 1", profissional: "Ana Souza", data: "2025-09-02", observacoes: "Apresentou dificuldade inicial...", status: "Presente", statusColor: "bg-green-500 hover:bg-green-600" },
@@ -47,18 +44,13 @@ export default function HistoricoAulasPage() {
         return mockData;
     };
 
-    // Simulação de atualização de status no backend
     const updateStatusAula = async (id, status) => {
         console.log(`Chamando API para alterar status da aula ${id} para ${status}`);
-        // FUTURO: trocar por chamada real, ex:
-        // await fetch(`/api/aulas/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-
         const colorMap = {
             "Presente": "bg-green-500 hover:bg-green-600",
             "Falta": "bg-red-500 hover:bg-red-600",
             "Atestado": "bg-cyan-500 hover:bg-cyan-600"
         };
-
         setAulas(prev => prev.map(aula => aula.id === id ? { ...aula, status, statusColor: colorMap[status] } : aula));
     };
 
@@ -82,61 +74,70 @@ export default function HistoricoAulasPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">
+            {/* Botão Voltar */}
+            <button 
+                onClick={() => window.history.back()} 
+                className="flex items-center gap-2 mb-4 text-teal-500 hover:text-teal-700"
+            >
+                <ArrowLeft size={18} /> Voltar
+            </button>
+
             <h1 className="text-2xl font-semibold text-gray-800 mb-6">Histórico de Aulas</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex flex-col justify-center items-center p-6 rounded-lg bg-green-100 text-green-800">
+            {/* Resumo */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className="flex flex-col justify-center items-center p-4 rounded-lg bg-green-100 text-green-800">
                     <h2 className="text-xl font-medium mb-1">Total de Presenças</h2>
-                    <p className="text-5xl font-bold">{totalPresencas}</p>
+                    <p className="text-4xl sm:text-5xl font-bold">{totalPresencas}</p>
                 </div>
-                <div className="flex flex-col justify-center items-center p-6 rounded-lg bg-red-100 text-red-800">
+                <div className="flex flex-col justify-center items-center p-4 rounded-lg bg-red-100 text-red-800">
                     <h2 className="text-xl font-medium mb-1">Total de Faltas</h2>
-                    <p className="text-5xl font-bold">{totalFaltas < 10 ? `0${totalFaltas}` : totalFaltas}</p>
+                    <p className="text-4xl sm:text-5xl font-bold">{totalFaltas < 10 ? `0${totalFaltas}` : totalFaltas}</p>
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 mb-6 items-center">
+            {/* Filtros */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center">
                 <div className="flex gap-2 items-center">
-                    <label>Filtrar de:</label>
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border rounded px-2 py-1" />
+                    <label className="text-sm">Filtrar de:</label>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
                 </div>
                 <div className="flex gap-2 items-center">
-                    <label>até:</label>
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border rounded px-2 py-1" />
+                    <label className="text-sm">até:</label>
+                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
                 </div>
             </div>
 
+            {/* Tabela responsiva */}
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-3 py-3">
-                                <Checkbox checked={selectedAulas.length === aulas.length && aulas.length > 0} onChange={handleSelectAll} />
-                            </th>
-                            <th className="px-3 py-3">Aula</th>
-                            <th className="px-3 py-3">Profissional</th>
-                            <th className="px-3 py-3">Data</th>
-                            <th className="px-3 py-3">Observações</th>
-                            <th className="px-3 py-3">Status</th>
-                            {isInstrutor && <th className="px-3 py-3"></th>}
+                            <th className="px-2 py-2 text-xs sm:text-sm">Selecionar</th>
+                            <th className="px-2 py-2 text-xs sm:text-sm">Aula</th>
+                            <th className="px-2 py-2 text-xs sm:text-sm">Profissional</th>
+                            <th className="px-2 py-2 text-xs sm:text-sm">Data</th>
+                            <th className="px-2 py-2 text-xs sm:text-sm">Observações</th>
+                            <th className="px-2 py-2 text-xs sm:text-sm">Status</th>
+                            {isInstrutor && <th className="px-2 py-2 text-xs sm:text-sm"></th>}
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {aulas.map(aula => (
                             <tr key={aula.id} className="hover:bg-gray-50 transition duration-150">
-                                <td className="px-3 py-4"><Checkbox checked={selectedAulas.includes(aula.id)} onChange={() => handleSelectAula(aula.id)} /></td>
-                                <td className="px-3 py-4">{aula.aula}</td>
-                                <td className="px-3 py-4">{aula.profissional}</td>
-                                <td className="px-3 py-4">{aula.data}</td>
-                                <td className="px-3 py-4 text-sm text-gray-500 max-w-xs">{aula.observacoes}</td>
-                                <td className="px-3 py-4">
-                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${aula.statusColor}`}>
+                                <td className="px-2 py-2 text-xs sm:text-sm"><Checkbox checked={selectedAulas.includes(aula.id)} onChange={() => handleSelectAula(aula.id)} /></td>
+                                <td className="px-2 py-2 text-xs sm:text-sm">{aula.aula}</td>
+                                <td className="px-2 py-2 text-xs sm:text-sm">{aula.profissional}</td>
+                                <td className="px-2 py-2 text-xs sm:text-sm">{aula.data}</td>
+                                <td className="px-2 py-2 text-xs sm:text-sm max-w-xs truncate">{aula.observacoes}</td>
+                                <td className="px-2 py-2 text-xs sm:text-sm">
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${aula.statusColor}`}>
                                         {aula.status}
                                     </span>
                                 </td>
                                 {isInstrutor && (
-                                    <td className="px-3 py-4 text-right text-sm font-medium relative">
+                                    <td className="px-2 py-2 text-xs sm:text-sm text-right relative">
                                         <MoreVertical 
                                             className="cursor-pointer" 
                                             onClick={() => setOpenDropdownId(openDropdownId === aula.id ? null : aula.id)} 

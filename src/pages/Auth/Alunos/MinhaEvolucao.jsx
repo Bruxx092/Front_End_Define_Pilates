@@ -33,8 +33,7 @@ export default function MinhaEvolucao() {
   const [error, setError] = useState(null);
   const [isInstrutor, setIsInstrutor] = useState(false);
 
-  // MOCK-UP: alterar aqui para testar tipo de usuário
-  const setMockUserType = () => false; 
+  const setMockUserType = () => true; 
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario")) || { id: 1, tipo: "aluno" };
@@ -120,82 +119,68 @@ export default function MinhaEvolucao() {
   };
 
   return (
-    <div className="min-h-screen bg-white md:bg-gray-100 p-0 md:p-8">
-      <h1 className="text-xl font-semibold text-gray-800 p-4 md:p-0 md:mb-6">Minha Evolução</h1>
+    <div className="min-h-screen bg-white md:bg-gray-100 p-2 md:p-8">
+      <h1 className="text-lg md:text-xl lg:text-2xl font-semibold text-gray-800 p-4 md:p-0 md:mb-6">Minha Evolução</h1>
 
       <Card className="shadow-lg md:shadow-xl rounded-none md:rounded-lg border-none">
         <CardContent className="flex flex-col p-0 gap-0">
 
           {/* Dados pessoais */}
-          <div className="flex flex-col sm:flex-row p-6 md:p-8 gap-6 md:gap-8 relative">
+          <div className="flex flex-col sm:flex-row p-4 md:p-6 gap-4 md:gap-8 relative">
             <p className="absolute top-2 right-4 text-xs text-red-600 font-medium">*Próxima reavaliação em {aluno?.reavaliacao}</p>
             <div className="w-full sm:w-auto flex flex-row sm:flex-col gap-4 sm:gap-0 sm:items-start">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg bg-gray-300 flex items-center justify-center text-gray-600 mr-4 sm:mr-0 sm:mb-4">
-                <User className="w-16 h-16 text-white" />
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg bg-gray-300 flex items-center justify-center text-gray-600 mr-4 sm:mr-0 sm:mb-4">
+                <User className="w-14 h-14 text-white" />
               </div>
               <div className="flex flex-col justify-center sm:justify-start">
                 <p className="text-gray-500 text-sm hidden sm:block">Históricos</p>
-                <p className="text-green-600 font-semibold text-lg sm:text-base -mt-1 sm:mt-2">Ativo</p>
+                <p className="text-green-600 font-semibold text-base sm:text-lg -mt-1 sm:mt-2">Ativo</p>
               </div>
             </div>
-            <div className="flex-1 grid grid-cols-2 gap-4 text-sm mt-0 sm:mt-1">
+            <div className="flex-1 grid grid-cols-2 gap-3 text-sm mt-0 sm:mt-1">
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-gray-500 text-sm">Nome completo</p>
-                <p className="font-semibold text-gray-900 text-lg sm:text-base">{aluno?.nome}</p>
+                <p className="text-gray-500 text-xs sm:text-sm">Nome completo</p>
+                <p className="font-semibold text-gray-900 text-sm sm:text-base">{aluno?.nome}</p>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-gray-500 text-sm">Modalidade</p>
-                <p className="font-semibold text-gray-900 text-lg sm:text-base">{aluno?.modalidade}</p>
+                <p className="text-gray-500 text-xs sm:text-sm">Modalidade</p>
+                <p className="font-semibold text-gray-900 text-sm sm:text-base">{aluno?.modalidade}</p>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-gray-500 text-sm">Email</p>
-                <p className="text-gray-800 text-lg sm:text-base">{aluno?.email}</p>
+                <p className="text-gray-500 text-xs sm:text-sm">Email</p>
+                <p className="text-gray-800 text-sm sm:text-base">{aluno?.email}</p>
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-gray-500 text-sm">Telefone</p>
-                <p className="text-gray-800 text-lg sm:text-base">{aluno?.telefone}</p>
+                <p className="text-gray-500 text-xs sm:text-sm">Telefone</p>
+                <p className="text-gray-800 text-sm sm:text-base">{aluno?.telefone}</p>
               </div>
             </div>
           </div>
 
           {/* Botões */}
-          <div className="px-6 pb-6 md:px-8 md:pb-8 border-t pt-4 sm:pt-0 sm:border-t-0">
-            <div className="flex gap-4">
+          <div className="px-4 pb-4 md:px-8 md:pb-8 border-t pt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
+            {[
+              { path: "/historico-atestados", icon: <FileText className="w-5 h-5 text-gray-600 mb-1" />, label: "Histórico de Atestados" },
+              { path: "/historico-aulas", icon: <BookOpen className="w-5 h-5 text-gray-600 mb-1" />, label: "Histórico de Aulas" },
+              { path: "/fotos", icon: <ImageIcon className="w-5 h-5 text-gray-600 mb-1" />, label: "Fotos" },
+            ].map((btn, i) => (
               <div
+                key={i}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate("/historico-atestados")}
-                onKeyDown={(e) => handleKeyNavigation("/historico-atestados", e)}
-                className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150"
+                onClick={() => navigate(btn.path)}
+                onKeyDown={(e) => handleKeyNavigation(btn.path, e)}
+                className="flex flex-col items-center p-3 w-28 border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150"
               >
-                <FileText className="w-5 h-5 text-gray-600 mb-1" />
-                <span className="text-xs text-center text-gray-700">Histórico de Atestados</span>
+                {btn.icon}
+                <span className="text-xs text-center text-gray-700">{btn.label}</span>
               </div>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate("/historico-aulas")}
-                onKeyDown={(e) => handleKeyNavigation("/historico-aulas", e)}
-                className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer border-gray-400 bg-white shadow-sm transition duration-150"
-              >
-                <BookOpen className="w-5 h-5 text-gray-600 mb-1" />
-                <span className="text-xs text-center text-gray-700">Histórico de Aulas</span>
-              </div>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate("/fotos")}
-                onKeyDown={(e) => handleKeyNavigation("/fotos", e)}
-                className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150"
-              >
-                <ImageIcon className="w-5 h-5 text-gray-600 mb-1" />
-                <span className="text-xs text-center text-gray-700">Fotos</span>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Gráfico e observações */}
-          <div className="flex flex-col lg:flex-row p-6 md:p-8 pt-4 gap-6 bg-gray-50 md:bg-white border-t">
+          <div className="flex flex-col lg:flex-row p-4 md:p-8 gap-6 bg-gray-50 md:bg-white border-t">
+            {/* Gráfico */}
             <div className="lg:w-1/2 bg-white rounded-lg p-4 shadow-md border border-gray-100 flex flex-col">
               <h2 className="font-semibold text-lg mb-4 text-gray-800">Desempenho</h2>
               <ResponsiveContainer width="100%" height={250}>
@@ -212,6 +197,7 @@ export default function MinhaEvolucao() {
               </ResponsiveContainer>
             </div>
 
+            {/* Observações */}
             <div className="lg:w-1/2 bg-white rounded-lg shadow-md p-5 border border-gray-100 relative">
               {isInstrutor && (
                 <button className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 p-2">
@@ -247,6 +233,7 @@ export default function MinhaEvolucao() {
               )}
             </div>
           </div>
+
         </CardContent>
       </Card>
     </div>
