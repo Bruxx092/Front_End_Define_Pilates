@@ -113,8 +113,8 @@ export default function FotosPage() {
         <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
 
             {/* Botão Voltar */}
-            <button 
-                onClick={() => window.history.back()} 
+            <button
+                onClick={() => window.history.back()}
                 className="flex items-center gap-2 mb-4 text-teal-500 hover:text-teal-700"
             >
                 <ArrowLeft size={18} /> Voltar
@@ -152,12 +152,20 @@ export default function FotosPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {fotos.length ? fotos.map(foto => (
                     <div key={foto.id} className="bg-white rounded shadow overflow-hidden relative">
-                        <img
-                            src={foto.url}
-                            alt={foto.descricao}
-                            className="w-full h-48 object-cover cursor-pointer"
+                        
+                        {/* Tornando imagem clicável e acessível */}
+                        <button
                             onClick={() => setModalVisualizar({ aberto: true, foto })}
-                        />
+                            className="w-full p-0 m-0 border-none bg-transparent cursor-pointer"
+                            aria-label={`Visualizar foto ${foto.nome}`}
+                        >
+                            <img
+                                src={foto.url}
+                                alt={foto.descricao}
+                                className="w-full h-48 object-cover"
+                            />
+                        </button>
+
                         <div className="p-3">
                             <h3 className="font-medium text-gray-700">{foto.nome}</h3>
                             <p className="text-sm text-gray-500">{foto.data}</p>
