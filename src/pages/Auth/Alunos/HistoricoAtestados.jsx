@@ -30,17 +30,11 @@ export default function AtestadoPage() {
 
   const [isInstrutor, setIsInstrutor] = useState(false);
 
-  // --------------------------
-  // MOCK-UP: alterar aqui para testar tipo de usuário
-  // true = instrutor, false = aluno
-  // REMOVER NO FUTURO quando houver autenticação real
-  const setMockUserType = () => false; // ← Alterar para false ou true para testar
-  // --------------------------
+  const setMockUserType = () => false;
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario")) || { id: 1, tipo: "aluno" };
 
-    // Aplicando mock
     if (setMockUserType()) {
       usuario.tipo = "instrutor";
     } else {
@@ -52,18 +46,11 @@ export default function AtestadoPage() {
     const fetchAtestados = async () => {
       try {
         setLoading(true);
-
-        // FUTURO: trocar para chamada real da API
-        // const res = await fetch(`/api/atestados?usuarioId=${usuario.id}`);
-        // const data = await res.json();
-
         const data = mockAtestados;
-
         const normalized = data.map((item) => ({
           ...item,
           color: item.status === "Aprovado" ? "text-green-500" : "text-red-500",
         }));
-
         setAtestados(normalized);
         setError(null);
       } catch (err) {
@@ -89,7 +76,6 @@ export default function AtestadoPage() {
     }
     const start = parseDate(startDate);
     const end = parseDate(endDate);
-
     const filtered = atestados.filter((atestado) => {
       const atestadoDate = parseDate(atestado.date);
       return atestadoDate >= start && atestadoDate <= end;
@@ -108,9 +94,7 @@ export default function AtestadoPage() {
     setSelectedAtestado(null);
   };
 
-  const handleOpenAddModal = () => {
-    setModalAddOpen(true);
-  };
+  const handleOpenAddModal = () => setModalAddOpen(true);
 
   const handleCloseAddModal = () => {
     setModalAddOpen(false);
@@ -123,16 +107,6 @@ export default function AtestadoPage() {
 
   const handleEnviarAtestado = async () => {
     try {
-      // FUTURO: trocar para chamada real da API
-      // const formData = new FormData();
-      // formData.append("dataConsulta", novaDataConsulta);
-      // formData.append("qtdDias", novaQtdDias);
-      // formData.append("codigoDoenca", novoCodigoDoenca);
-      // formData.append("medico", novoMedico);
-      // if (novaFoto) formData.append("foto", novaFoto);
-      // const res = await fetch("/api/atestados", { method: "POST", body: formData });
-      // const novoAtestado = await res.json();
-
       const novoAtestado = {
         id: atestados.length + 1,
         date: novaDataConsulta,
@@ -141,7 +115,6 @@ export default function AtestadoPage() {
         medico: novoMedico,
         fotoUrl: novaFoto ? URL.createObjectURL(novaFoto) : null,
       };
-
       setAtestados([{ ...novoAtestado, color: "text-red-500" }, ...atestados]);
       handleCloseAddModal();
     } catch (error) {
@@ -167,35 +140,17 @@ export default function AtestadoPage() {
 
       <Card className="mb-6 shadow-sm border-gray-200">
         <CardContent className="p-4 flex flex-col sm:flex-row gap-3 items-center">
-          <h2 className="text-sm font-medium text-gray-700 w-full sm:w-auto sm:text-nowrap">
-            Filtrar por período:
-          </h2>
+          <h2 className="text-sm font-medium text-gray-700 w-full sm:w-auto sm:text-nowrap">Filtrar por período:</h2>
           <div className="relative w-full sm:w-1/3">
-            <Input
-              type="text"
-              placeholder="Data Início (ex: 01/09/2025)"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="pl-8"
-            />
+            <Input type="text" placeholder="Data Início (ex: 01/09/2025)" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="pl-8" />
             <Calendar className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
           <div className="relative w-full sm:w-1/3">
-            <Input
-              type="text"
-              placeholder="Data Fim (ex: 30/10/2025)"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="pl-8"
-            />
+            <Input type="text" placeholder="Data Fim (ex: 30/10/2025)" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="pl-8" />
             <Calendar className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
-          <Button
-            onClick={handleFilter}
-            className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800"
-          >
-            <Search className="h-4 w-4 mr-2" />
-            Buscar
+          <Button onClick={handleFilter} className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-800">
+            <Search className="h-4 w-4 mr-2" /> Buscar
           </Button>
         </CardContent>
       </Card>
@@ -217,8 +172,15 @@ export default function AtestadoPage() {
                   {atestados.map((atestado) => (
                     <li
                       key={atestado.id}
+                      role="button"
+                      tabIndex={0}
                       className="flex justify-between items-center p-4 hover:bg-gray-50 transition duration-150 cursor-pointer"
                       onClick={() => handleOpenAtestado(atestado)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          handleOpenAtestado(atestado);
+                        }
+                      }}
                     >
                       <div className="flex items-center space-x-3">
                         <span className={`${atestado.color} text-xl leading-none`}>&bull;</span>
@@ -261,30 +223,10 @@ export default function AtestadoPage() {
             </button>
             <h2 className="text-xl font-semibold mb-4">Enviar Novo Atestado</h2>
             <div className="space-y-4">
-              <Input
-                type="text"
-                placeholder="Data da consulta (ex: 10/10/2025)"
-                value={novaDataConsulta}
-                onChange={(e) => setNovaDataConsulta(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Quantidade de dias de licença"
-                value={novaQtdDias}
-                onChange={(e) => setNovaQtdDias(e.target.value)}
-              />
-              <Input
-                type="text"
-                placeholder="Código da doença"
-                value={novoCodigoDoenca}
-                onChange={(e) => setNovoCodigoDoenca(e.target.value)}
-              />
-              <Input
-                type="text"
-                placeholder="Médico que atendeu"
-                value={novoMedico}
-                onChange={(e) => setNovoMedico(e.target.value)}
-              />
+              <Input type="text" placeholder="Data da consulta (ex: 10/10/2025)" value={novaDataConsulta} onChange={(e) => setNovaDataConsulta(e.target.value)} />
+              <Input type="number" placeholder="Quantidade de dias de licença" value={novaQtdDias} onChange={(e) => setNovaQtdDias(e.target.value)} />
+              <Input type="text" placeholder="Código da doença" value={novoCodigoDoenca} onChange={(e) => setNovoCodigoDoenca(e.target.value)} />
+              <Input type="text" placeholder="Médico que atendeu" value={novoMedico} onChange={(e) => setNovoMedico(e.target.value)} />
               <div className="flex items-center gap-2">
                 <label className="cursor-pointer flex items-center gap-2 bg-gray-200 px-3 py-2 rounded">
                   <Upload className="h-4 w-4" />

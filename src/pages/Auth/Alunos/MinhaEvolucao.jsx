@@ -31,24 +31,14 @@ export default function MinhaEvolucao() {
   const [aluno, setAluno] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [isInstrutor, setIsInstrutor] = useState(false);
 
-  // --------------------------
   // MOCK-UP: alterar aqui para testar tipo de usuário
-  // true = instrutor, false = aluno
-  // REMOVER NO FUTURO quando houver autenticação real
   const setMockUserType = () => false; 
-  // --------------------------
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem("usuario")) || { id: 1, tipo: "aluno" };
-
-    if (setMockUserType()) {
-      usuario.tipo = "instrutor";
-    } else {
-      usuario.tipo = "aluno";
-    }
+    usuario.tipo = setMockUserType() ? "instrutor" : "aluno";
     localStorage.setItem("usuario", JSON.stringify(usuario));
     setIsInstrutor(usuario.tipo === "instrutor");
 
@@ -109,67 +99,36 @@ export default function MinhaEvolucao() {
     fetchData();
   }, []);
 
-  // --------------------------
-  // Função chamada ao clicar em "Salvar"
-  // Prepara os dados e faz chamada para backend no futuro
-  // --------------------------
   const handleSalvar = () => {
     const dadosParaSalvar = {
-      observacoes: document.getElementById("observacoes").value,
-      feedback: document.getElementById("feedback").value,
+      observacoes: document.getElementById("observacoes")?.value,
+      feedback: document.getElementById("feedback")?.value,
       caracteristicas: {
-        flexibilidade: document.getElementById("flexibilidade").value,
-        postura: document.getElementById("postura").value,
-        forca: document.getElementById("forca").value,
+        flexibilidade: document.getElementById("flexibilidade")?.value,
+        postura: document.getElementById("postura")?.value,
+        forca: document.getElementById("forca")?.value,
       }
     };
-
     console.log("Dados para salvar:", dadosParaSalvar);
-
-    // FUTURO: descomentar e configurar endpoint real do backend
-    /*
-    const token = localStorage.getItem("token");
-    fetch("/api/salvar-evolucao", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(dadosParaSalvar)
-    })
-    .then(res => res.json())
-    .then(data => console.log("Dados salvos com sucesso:", data))
-    .catch(err => console.error("Erro ao salvar:", err));
-    */
   };
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Carregando dados...
-      </div>
-    );
+  if (loading) return <div className="flex items-center justify-center min-h-screen text-gray-600">Carregando dados...</div>;
+  if (error) return <div className="flex items-center justify-center min-h-screen text-red-500">Erro: {error}</div>;
 
-  if (error)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
-        Erro: {error}
-      </div>
-    );
+  const handleKeyNavigation = (path, e) => {
+    if (e.key === "Enter" || e.key === " ") navigate(path);
+  };
 
   return (
     <div className="min-h-screen bg-white md:bg-gray-100 p-0 md:p-8">
-      <h1 className="text-xl font-semibold text-gray-800 p-4 md:p-0 md:mb-6">
-        Minha Evolução
-      </h1>
+      <h1 className="text-xl font-semibold text-gray-800 p-4 md:p-0 md:mb-6">Minha Evolução</h1>
 
       <Card className="shadow-lg md:shadow-xl rounded-none md:rounded-lg border-none">
         <CardContent className="flex flex-col p-0 gap-0">
+
           {/* Dados pessoais */}
           <div className="flex flex-col sm:flex-row p-6 md:p-8 gap-6 md:gap-8 relative">
-            <p className="absolute top-2 right-4 text-xs text-red-600 font-medium">
-              *Próxima reavaliação em {aluno?.reavaliacao}
-            </p>
+            <p className="absolute top-2 right-4 text-xs text-red-600 font-medium">*Próxima reavaliação em {aluno?.reavaliacao}</p>
             <div className="w-full sm:w-auto flex flex-row sm:flex-col gap-4 sm:gap-0 sm:items-start">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg bg-gray-300 flex items-center justify-center text-gray-600 mr-4 sm:mr-0 sm:mb-4">
                 <User className="w-16 h-16 text-white" />
@@ -179,7 +138,6 @@ export default function MinhaEvolucao() {
                 <p className="text-green-600 font-semibold text-lg sm:text-base -mt-1 sm:mt-2">Ativo</p>
               </div>
             </div>
-
             <div className="flex-1 grid grid-cols-2 gap-4 text-sm mt-0 sm:mt-1">
               <div className="col-span-2 sm:col-span-1">
                 <p className="text-gray-500 text-sm">Nome completo</p>
@@ -203,15 +161,33 @@ export default function MinhaEvolucao() {
           {/* Botões */}
           <div className="px-6 pb-6 md:px-8 md:pb-8 border-t pt-4 sm:pt-0 sm:border-t-0">
             <div className="flex gap-4">
-              <div role="button" tabIndex={0} onClick={() => navigate("/historico-atestados")} className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/historico-atestados")}
+                onKeyDown={(e) => handleKeyNavigation("/historico-atestados", e)}
+                className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150"
+              >
                 <FileText className="w-5 h-5 text-gray-600 mb-1" />
                 <span className="text-xs text-center text-gray-700">Histórico de Atestados</span>
               </div>
-              <div role="button" tabIndex={0} onClick={() => navigate("/historico-aulas")} className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer border-gray-400 bg-white shadow-sm transition duration-150">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/historico-aulas")}
+                onKeyDown={(e) => handleKeyNavigation("/historico-aulas", e)}
+                className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer border-gray-400 bg-white shadow-sm transition duration-150"
+              >
                 <BookOpen className="w-5 h-5 text-gray-600 mb-1" />
                 <span className="text-xs text-center text-gray-700">Histórico de Aulas</span>
               </div>
-              <div role="button" tabIndex={0} onClick={() => navigate("/fotos")} className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/fotos")}
+                onKeyDown={(e) => handleKeyNavigation("/fotos", e)}
+                className="flex flex-col items-center p-3 w-fit border rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition duration-150"
+              >
                 <ImageIcon className="w-5 h-5 text-gray-600 mb-1" />
                 <span className="text-xs text-center text-gray-700">Fotos</span>
               </div>
@@ -242,30 +218,25 @@ export default function MinhaEvolucao() {
                   <Pencil size={18} />
                 </button>
               )}
-
               <h2 className="font-semibold text-lg mb-2 text-gray-800">Observações do Instrutor</h2>
               {isInstrutor ? (
                 <textarea id="observacoes" className="border p-2 w-full h-32" defaultValue={aluno?.observacoes} />
               ) : (
                 <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap">{aluno?.observacoes}</p>
               )}
-
               <h3 className="font-semibold text-lg mt-4 mb-2 text-gray-800">Feedback rápido</h3>
               {isInstrutor ? (
                 <textarea id="feedback" className="border p-2 w-full h-24" defaultValue={aluno?.feedback} />
               ) : (
                 <p className="text-sm text-gray-700 mb-4">{aluno?.feedback}</p>
               )}
-
               <h3 className="font-semibold text-lg mt-4 mb-2 text-gray-800">Características</h3>
               {isInstrutor ? (
                 <div className="flex flex-col gap-2">
                   <input id="flexibilidade" type="text" className="border p-2" defaultValue={`Flexibilidade (${aluno?.caracteristicas?.flexibilidade})`} />
                   <input id="postura" type="text" className="border p-2" defaultValue={`Postura (${aluno?.caracteristicas?.postura})`} />
                   <input id="forca" type="text" className="border p-2" defaultValue={`Força (${aluno?.caracteristicas?.forca})`} />
-                  <button onClick={handleSalvar} className="mt-3 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                    Salvar
-                  </button>
+                  <button onClick={handleSalvar} className="mt-3 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Salvar</button>
                 </div>
               ) : (
                 <>
