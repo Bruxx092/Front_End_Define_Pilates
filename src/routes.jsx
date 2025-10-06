@@ -13,7 +13,7 @@ import LoginForm from "./pages/Auth/Login/LoginForm";
 import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
 import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
-import Meus_Planos from "./pages/Meus_Planos";
+import Meus_Planos from "./pages/Aluno/Meus_Planos";
 
 function AppRoutes() {
   return (
@@ -23,12 +23,12 @@ function AppRoutes() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/login" element={<Login />} />
         <Route path="/colaborator-signin" element={<ColaboratorSignIn />} />
-        <Route path="/instructor-signin" element={<InstructorSignIn/>} />
-        <Route path="/student-signin" element={<StudentSignIn/>} />
-        <Route path="/login-form" element={<LoginForm/>} />
-        <Route path="/forgot-password" element={<ForgotPassword/>} />
-        <Route path="/code" element={<Code/>} />
-        <Route path="/new-password" element={<NewPassword/>} />
+        <Route path="/instructor-signin" element={<InstructorSignIn />} />
+        <Route path="/student-signin" element={<StudentSignIn />} />
+        <Route path="/login-form" element={<LoginForm />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/code" element={<Code />} />
+        <Route path="/new-password" element={<NewPassword />} />
         <Route path="/aluno/planos" element={<Meus_Planos />} />
       </Routes>
     </Router>

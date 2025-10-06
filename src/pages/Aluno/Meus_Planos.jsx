@@ -1,5 +1,5 @@
 // @ts-nocheck
-import SidebarAluno from "../components/layout/Sidebars/SidebarAluno";
+import SidebarAluno from "../../components/layout/Sidebars/SidebarAluno";
 
 const Meus_Planos = () => {
   return (

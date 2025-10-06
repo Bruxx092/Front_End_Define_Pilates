@@ -1,4 +1,3 @@
-import React from 'react';
 import logo from '../../../assets/Logo_Sem_Contorno.svg';
 import UserCard from '../../../components/common/UserCard';
 import { Users, User, Handshake } from 'lucide-react';
