@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
 import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
+import Faturas from "./pages/Aluno/Faturas";
 
 function AppRoutes() {
   return (
@@ -30,6 +31,7 @@ function AppRoutes() {
         <Route path="/code" element={<Code />} />
         <Route path="/new-password" element={<NewPassword />} />
         <Route path="/aluno/planos" element={<Meus_Planos />} />
+        <Route path="/aluno/faturas" element={<Faturas />} />
       </Routes>
     </Router>
   );

@@ -4,7 +4,7 @@ import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import { useState } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
-import { CheckCircle2, FileText, Download, Eye, Send } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,27 +12,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
-
-const statusConfig = {
-  paid: {
-    label: "Pago",
-    className: "bg-green-100 text-green-700 border-green-200",
-    icon: "✓",
-  },
-  pending: {
-    label: "Em aberto",
-    className: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    icon: "○",
-  },
-  overdue: {
-    label: "Vencido",
-    className: "bg-red-100 text-red-700 border-red-200",
-    icon: "!",
-  },
-};
 
 function PlanCard(props) {
   const { name, price, frequency, benefits } = props;
@@ -120,79 +101,6 @@ function PlanOptionCard(props) {
       >
         {isCurrentPlan ? "Plano Ativo" : "Solicitar este plano"}
       </ButtonPlanos>
-    </Card>
-  );
-}
-
-function InvoiceCard(props) {
-  const { month, amount, status } = props;
-  const config = statusConfig[status];
-
-  return (
-    <Card className="p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-        <div className="flex items-center gap-3">
-          <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-              {month}
-            </h3>
-            <p className="text-lg sm:text-xl font-bold text-blue-600 mt-1">
-              {amount}
-            </p>
-          </div>
-        </div>
-
-        <span
-          className={
-            "px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border-2 flex items-center gap-1 w-fit " +
-            config.className
-          }
-        >
-          <span className="text-sm sm:text-lg leading-none">{config.icon}</span>
-          {config.label}
-        </span>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-2">
-        <Dialog>
-          <DialogTrigger asChild>
-            <ButtonPlanos
-              className="flex-1 text-sm sm:text-base font-medium bg-[#1A5276] text-white hover:bg-[#154360] border-[#1A5276]"
-              size="lg"
-            >
-              <Eye className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              Visualizar
-            </ButtonPlanos>
-          </DialogTrigger>
-          <DialogContent
-            className="max-w-[95vw] sm:max-w-4xl h-[80vh]"
-            aria-describedby={undefined}
-          >
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">
-                Fatura de {month}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 w-full h-full">
-              <div className="w-full h-full rounded-lg bg-gray-100 flex items-center justify-center">
-                <p className="text-gray-500 text-sm sm:text-base">
-                  Visualização da fatura de {month}
-                </p>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <ButtonPlanos
-          variant="outline"
-          className="flex-1 text-sm sm:text-base font-medium"
-          size="lg"
-        >
-          <Download className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-          Baixar
-        </ButtonPlanos>
-      </div>
     </Card>
   );
 }
@@ -428,12 +336,6 @@ const Meus_Planos = () => {
     },
   ];
 
-  const invoices = [
-    { month: "Outubro 2025", amount: "R$ 89,90", status: "paid" },
-    { month: "Setembro 2025", amount: "R$ 89,90", status: "paid" },
-    { month: "Agosto 2025", amount: "R$ 89,90", status: "pending" },
-  ];
-
   function handlePlanSelect(planName) {
     setSelectedPlanName(planName);
     setDialogOpen(true);
@@ -465,7 +367,7 @@ const Meus_Planos = () => {
         }}
       >
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 xl:gap-8 max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="space-y-6 sm:space-y-8">
               <section className="space-y-3 sm:space-y-4">
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
@@ -483,7 +385,7 @@ const Meus_Planos = () => {
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Solicitar mudança de plano
                 </h2>
-                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                   {availablePlans.map(function (plan) {
                     return (
                       <PlanOptionCard
@@ -503,24 +405,6 @@ const Meus_Planos = () => {
                 </div>
               </section>
             </div>
-
-            <section className="space-y-4 mt-6 sm:mt-8 lg:mt-0">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                Minhas Faturas
-              </h2>
-              <div className="space-y-2 sm:space-y-3">
-                {invoices.map(function (invoice, index) {
-                  return (
-                    <InvoiceCard
-                      key={index}
-                      month={invoice.month}
-                      amount={invoice.amount}
-                      status={invoice.status}
-                    />
-                  );
-                })}
-              </div>
-            </section>
           </div>
         </main>
 

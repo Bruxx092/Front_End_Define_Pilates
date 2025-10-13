@@ -11,6 +11,7 @@ import {
   FileText,
   LineChart,
   Users,
+  Receipt,
 } from "lucide-react";
 
 export const sidebarConfigs = {
@@ -118,6 +119,11 @@ export const sidebarConfigs = {
         title: "Meus Planos",
         icon: CreditCard,
         path: "/aluno/planos",
+      },
+      {
+        title: "Minhas Faturas",
+        icon: Receipt,
+        path: "/aluno/faturas",
       },
     ],
     userInfo: {
