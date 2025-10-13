@@ -112,12 +112,12 @@ const Faturas = () => {
   const { isMobile, sidebarWidth } = useSidebar();
 
   const invoices = [
-    { month: "Outubro 2025", amount: "R$ 89,90", status: "paid" },
-    { month: "Setembro 2025", amount: "R$ 89,90", status: "paid" },
-    { month: "Agosto 2025", amount: "R$ 89,90", status: "pending" },
-    { month: "Julho 2025", amount: "R$ 89,90", status: "paid" },
-    { month: "Junho 2025", amount: "R$ 89,90", status: "paid" },
-    { month: "Maio 2025", amount: "R$ 89,90", status: "paid" },
+    { month: "Outubro 2025", amount: "R$ 390,00", status: "paid" },
+    { month: "Setembro 2025", amount: "R$ 390,00", status: "paid" },
+    { month: "Agosto 2025", amount: "R$ 390,00", status: "pending" },
+    { month: "Julho 2025", amount: "R$ 390,00", status: "paid" },
+    { month: "Junho 2025", amount: "R$ 390,00", status: "paid" },
+    { month: "Maio 2025", amount: "R$ 390,00", status: "paid" },
   ];
 
   return (

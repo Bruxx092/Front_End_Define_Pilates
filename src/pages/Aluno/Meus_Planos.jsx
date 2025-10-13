@@ -156,7 +156,7 @@ const Meus_Planos = () => {
 
   const currentPlan = {
     name: "Plano Mensal - 3x semana",
-    price: "R$ 89,90/mês",
+    price: "R$ 390,00/mês",
     frequency: "3 vezes por semana",
     benefits: [
       "Aulas de Pilates 3x na semana",
@@ -170,7 +170,7 @@ const Meus_Planos = () => {
     {
       id: "mensal-1x",
       name: "Plano Mensal - 1x semana",
-      price: "R$ 49,90",
+      price: "R$ 210,00",
       frequency: "1 vez por semana",
       period: "por mês",
       benefits: [
@@ -182,7 +182,7 @@ const Meus_Planos = () => {
     {
       id: "mensal-2x",
       name: "Plano Mensal - 2x semana",
-      price: "R$ 69,90",
+      price: "R$ 310,00",
       frequency: "2 vezes por semana",
       period: "por mês",
       benefits: [
@@ -195,7 +195,7 @@ const Meus_Planos = () => {
     {
       id: "mensal-3x",
       name: "Plano Mensal - 3x semana",
-      price: "R$ 89,90",
+      price: "R$ 390,00",
       frequency: "3 vezes por semana",
       period: "por mês",
       benefits: [
@@ -208,20 +208,20 @@ const Meus_Planos = () => {
     {
       id: "trimestral-1x",
       name: "Plano Trimestral - 1x semana",
-      price: "R$ 129,90",
+      price: "3x R$ 185,00",
       frequency: "1 vez por semana",
       period: "a cada 3 meses",
       benefits: [
         "Aulas de Pilates 1x na semana",
         "Acesso aos equipamentos",
         "Avaliação física mensal",
-        "5% de desconto",
+        "12% de desconto",
       ],
     },
     {
       id: "trimestral-2x",
       name: "Plano Trimestral - 2x semana",
-      price: "R$ 189,90",
+      price: "3x R$ 285,00",
       frequency: "2 vezes por semana",
       period: "a cada 3 meses",
       benefits: [
@@ -229,13 +229,13 @@ const Meus_Planos = () => {
         "Acesso livre aos equipamentos",
         "Avaliação física mensal",
         "Acompanhamento personalizado",
-        "5% de desconto",
+        "8% de desconto",
       ],
     },
     {
       id: "trimestral-3x",
       name: "Plano Trimestral - 3x semana",
-      price: "R$ 249,90",
+      price: "3x R$ 375,00",
       frequency: "3 vezes por semana",
       period: "a cada 3 meses",
       benefits: [
@@ -243,27 +243,27 @@ const Meus_Planos = () => {
         "Acesso livre aos equipamentos",
         "Avaliação física mensal",
         "Acompanhamento personalizado",
-        "5% de desconto",
+        "4% de desconto",
         "1 aula particular inclusa",
       ],
     },
     {
       id: "semestral-1x",
       name: "Plano Semestral - 1x semana",
-      price: "R$ 239,90",
+      price: "6x R$ 170,00",
       frequency: "1 vez por semana",
       period: "a cada 6 meses",
       benefits: [
         "Aulas de Pilates 1x na semana",
         "Acesso aos equipamentos",
         "Avaliação física mensal",
-        "10% de desconto",
+        "19% de desconto",
       ],
     },
     {
       id: "semestral-2x",
       name: "Plano Semestral - 2x semana",
-      price: "R$ 349,90",
+      price: "6x R$ 270,00",
       frequency: "2 vezes por semana",
       period: "a cada 6 meses",
       benefits: [
@@ -271,14 +271,14 @@ const Meus_Planos = () => {
         "Acesso livre aos equipamentos",
         "Avaliação física mensal",
         "Acompanhamento personalizado",
-        "10% de desconto",
+        "13% de desconto",
         "1 aula particular inclusa",
       ],
     },
     {
       id: "semestral-3x",
       name: "Plano Semestral - 3x semana",
-      price: "R$ 459,90",
+      price: "6x R$ 360,00",
       frequency: "3 vezes por semana",
       period: "a cada 6 meses",
       benefits: [
@@ -286,27 +286,27 @@ const Meus_Planos = () => {
         "Acesso livre aos equipamentos",
         "Avaliação física mensal",
         "Acompanhamento personalizado",
-        "10% de desconto",
+        "8% de desconto",
         "2 aulas particulares inclusas",
       ],
     },
     {
       id: "anual-1x",
       name: "Plano Anual - 1x semana",
-      price: "R$ 449,90",
+      price: "12x R$ 155,00",
       frequency: "1 vez por semana",
       period: "por ano",
       benefits: [
         "Aulas de Pilates 1x na semana",
         "Acesso aos equipamentos",
         "Avaliação física mensal",
-        "15% de desconto",
+        "26% de desconto",
       ],
     },
     {
       id: "anual-2x",
       name: "Plano Anual - 2x semana",
-      price: "R$ 649,90",
+      price: "12x R$ 255,00",
       frequency: "2 vezes por semana",
       period: "por ano",
       benefits: [
@@ -314,14 +314,14 @@ const Meus_Planos = () => {
         "Acesso livre aos equipamentos",
         "Avaliação física mensal",
         "Acompanhamento personalizado",
-        "15% de desconto",
+        "18% de desconto",
         "2 aulas particulares inclusas",
       ],
     },
     {
       id: "anual-3x",
       name: "Plano Anual - 3x semana",
-      price: "R$ 849,90",
+      price: "12x R$ 345,00",
       frequency: "3 vezes por semana",
       period: "por ano",
       benefits: [
@@ -329,7 +329,7 @@ const Meus_Planos = () => {
         "Acesso livre aos equipamentos",
         "Avaliação física mensal",
         "Acompanhamento personalizado",
-        "15% de desconto",
+        "12% de desconto",
         "4 aulas particulares inclusas",
         "Prioridade na reserva de horários",
       ],
