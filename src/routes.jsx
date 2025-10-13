@@ -4,6 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
 import SignIn from "./pages/Auth/SignIn/SignIn";
 import Login from "./pages/Auth/Login/Login";
 import ColaboratorSignIn from "./pages/Auth/SignIn/ColaboratorSignIn";
@@ -15,6 +16,10 @@ import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
 import Faturas from "./pages/Aluno/Faturas";
+import MinhaEvolucao from "./pages/MinhaEvolucao/minhaevolucao";
+import HistoricoAtestados from "./pages/MinhaEvolucao/HistoricoAtestados"; 
+import HistoricoAulasPage from "./pages/MinhaEvolucao/HistoricoAulas"; 
+import FotosPage from "./pages/MinhaEvolucao/Fotos"; // <-- import do Fotos.jsx
 
 function AppRoutes() {
   return (
@@ -32,6 +37,10 @@ function AppRoutes() {
         <Route path="/new-password" element={<NewPassword />} />
         <Route path="/aluno/planos" element={<Meus_Planos />} />
         <Route path="/aluno/faturas" element={<Faturas />} />
+        <Route path="/aluno/minha-evolucao" element={<MinhaEvolucao />} />
+        <Route path="/aluno/historico-atestados" element={<HistoricoAtestados />} />
+        <Route path="/aluno/historico-aulas" element={<HistoricoAulasPage />} />
+        <Route path="/aluno/fotos" element={<FotosPage />} /> 
       </Routes>
     </Router>
   );

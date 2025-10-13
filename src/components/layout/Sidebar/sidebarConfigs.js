@@ -113,7 +113,7 @@ export const sidebarConfigs = {
       {
         title: "Minha Evolução",
         icon: LineChart,
-        path: "/aluno/evolucao",
+        path: "/aluno/minha-evolucao", // atualizado
       },
       {
         title: "Meus Planos",
