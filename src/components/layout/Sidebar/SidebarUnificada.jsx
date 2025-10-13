@@ -1,26 +1,18 @@
+// SidebarUnificada.jsx
 // @ts-nocheck
-import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/Sidebar/button";
+import { Sheet, SheetContent } from "@/components/ui/Sidebar/sheet";
 import { Menu, LogOut, User, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSidebar } from "@/context/SidebarContext";
 
 const ICON_SIZE = "h-6 w-6";
 const TEXT_SIZE = "text-base";
 const TITLE_SIZE = "text-xl";
 
-const SidebarUnificada = ({ menuItems, userInfo }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+const SidebarUnificada = ({ menuItems, userInfo, isOpen, onOpenChange }) => {
+  const { isExpanded, isMobile, toggleSidebar } = useSidebar();
 
   const UserProfile = ({ isCollapsed = false }) => (
     <div className="p-4 border-t border-white/10 flex-shrink-0">
@@ -122,11 +114,11 @@ const SidebarUnificada = ({ menuItems, userInfo }) => {
   );
 
   const MobileMenu = () => (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <Button
         variant="ghost"
         className="md:hidden fixed top-4 left-4 z-50 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white shadow-lg transition-all duration-300 hover:scale-105 active:scale-95"
-        onClick={() => setIsOpen(true)}
+        onClick={() => onOpenChange(true)}
         style={{ backgroundColor: "#406882" }}
       >
         <Menu className="h-6 w-6" />
@@ -151,13 +143,13 @@ const SidebarUnificada = ({ menuItems, userInfo }) => {
               variant="ghost"
               size="icon"
               className="text-white hover:bg-white/10 h-10 w-10 transition-all duration-300 hover:rotate-90"
-              onClick={() => setIsOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               <X className="h-6 w-6" />
             </Button>
           </div>
 
-          <MenuItems onItemClick={() => setIsOpen(false)} />
+          <MenuItems onItemClick={() => onOpenChange(false)} />
           <UserProfile />
         </div>
       </SheetContent>
@@ -194,7 +186,7 @@ const SidebarUnificada = ({ menuItems, userInfo }) => {
       </motion.aside>
 
       <div
-        className={`fixed top-0 h-screen z-50 transition-all duration-500 ease-in-out`}
+        className={`fixed top-0 h-screen z-50 transition-all duration-500 ease-in-out pointer-events-none`}
         style={{
           width: "20px",
           backgroundColor: "#A5C7CB",
@@ -206,8 +198,8 @@ const SidebarUnificada = ({ menuItems, userInfo }) => {
         <Button
           variant="default"
           size="icon"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute top-1/2 -translate-y-1/2 -left-5 rounded-full h-10 w-10"
+          onClick={toggleSidebar}
+          className="absolute top-1/2 -translate-y-1/2 -left-5 rounded-full h-10 w-10 pointer-events-auto"
           style={{
             backgroundColor: "#A5C7CB",
             color: "white",
