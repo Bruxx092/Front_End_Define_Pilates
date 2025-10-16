@@ -25,9 +25,9 @@ const ColaboratorSignIn = () => {
 
     if(cadastroSucesso) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-shadow-green-200">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-bismark-800">
                 <div className="flex flex-col items-center p-8 bg-white rounded-lg shadow-md w-96">
-                    <div className="flex items-center justify-center p-8 bg-shadow-green-500 rounded-md">
+                    <div className="flex items-center justify-center p-8 bg-blumine-900 rounded-md">
                         <h2 className="text-xl font-bold text-white text-center">
                             NOVO USUÁRIO CADASTRADO COM SUCESSO!
                         </h2>
@@ -38,7 +38,7 @@ const ColaboratorSignIn = () => {
     }
 
  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-shadow-green-200 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-bismark-800 p-4">
 
         <form onSubmit={handlesubmit} className="w-full max-w-md">
 
@@ -108,7 +108,7 @@ const ColaboratorSignIn = () => {
                 />
             </div>
 
-            <button type="submit" className="w-full py-3 bg-shadow-green-500 text-white font-bold rounded-md hover:bg-shadow-green-600 transition-colors duration-300">
+            <button type="submit" className="w-full py-3 bg-blumine-900 text-white font-bold rounded-md hover:bg-blumine-950 transition-colors duration-300">
                 SALVAR
             </button>
         </div>

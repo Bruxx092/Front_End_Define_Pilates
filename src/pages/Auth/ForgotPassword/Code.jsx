@@ -11,7 +11,7 @@ const Code = () => {
         };
 
   return (
-    <div className='flex flex-col items-center justify-center min-h-screen bg-shadow-green-200'>
+    <div className='flex flex-col items-center justify-center min-h-screen bg-bismark-800 p-4'>
         <div className="flex flex-col items-center p-8 bg-white rounded-lg shadow-md w-960">
             <img src={Logo_Sem_Contorno} alt="Logo da Empresa" className="w-55" />
 
@@ -30,7 +30,7 @@ const Code = () => {
 
             <br />
 
-            <button className="w-full py-2 bg-shadow-green-500 text-white font-bold rounded-md hover:bg-shadow-green-600 transition-colors duration-300">
+            <button className="w-full py-2 bg-blumine-900 text-white font-bold rounded-md hover:bg-blumine-950 transition-colors duration-300">
                 ENVIAR
             </button>
 
