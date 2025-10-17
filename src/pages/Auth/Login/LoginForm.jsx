@@ -1,3 +1,5 @@
+//formulário de login
+
 import React, { useState } from "react";
 import {Mail, Lock} from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -29,8 +31,7 @@ const LoginForm = () => {
                 />
             </div>
 
-            <Link to={'/forgot-password'} className='text font-mono text-center text-gray-500 mt-1 hover:text-dove-gray-950'>ESQUECI A SENHA</Link>
-
+            <Link to={'/forgot-password'} className='text font-mono text-center text-gray-500 mt-1 hover:text-dove-gray-950'>ESQUECI A SENHA</Link> 
 
             <br />
 

@@ -1,9 +1,12 @@
+//Página de escolha do tipo de usuário para cadastro
+
 import logo from '../../../assets/Logo_Sem_Contorno.svg';
 import UserCard from '../../../components/common/UserCard';
 import { Users, User, Handshake } from 'lucide-react';
 
+// Componente principal da página de SignIn
 const SignIn = () => {
-  return (
+  return ( //Aqui ele retorna os cards pra selecionar qual quer usar
     <div className="flex flex-col items-center justify-center min-h-screen bg-bismark-800 p-4">
       <img src={logo} alt="Logo da Empresa" className="w-50 h-50 mb-6" />
 

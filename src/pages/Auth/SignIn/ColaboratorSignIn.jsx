@@ -1,14 +1,16 @@
+//Página de cadastro de colaboradores
+
 import React, { useState, useEffect } from "react";
 import { User, Mail, Lock, Search, FileBadge, ChevronDown, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg';
 
 const ColaboratorSignIn = () => {
-    const [documentType, setDocumentType] = useState('Administrador');    
-    const [cadastroSucesso, setCadastroSucesso] = useState(false);
-    const navigate = useNavigate();
+    const [documentType, setDocumentType] = useState('Administrador'); //função para selecionar se é adm ou recepcionista   
+    const [cadastroSucesso, setCadastroSucesso] = useState(false); //estado para mostrar a mensagem de sucesso
+    const navigate = useNavigate(); //hook para navegação entre páginas
 
-    useEffect(() => {
+    useEffect(() => { //aqui é o efeito de que se o cadastro for feito da forma correta, ele redireciona para a página de login
         if(cadastroSucesso) {
             const timer = setTimeout(() => {
                 navigate('/login');
@@ -37,7 +39,7 @@ const ColaboratorSignIn = () => {
         )
     }
 
- return (
+ return ( //a partir daqui é o formulário de cadastro
     <div className="flex flex-col items-center justify-center min-h-screen bg-bismark-800 p-4">
 
         <form onSubmit={handlesubmit} className="w-full max-w-md">
@@ -50,7 +52,7 @@ const ColaboratorSignIn = () => {
             <div className="flex items-center w-full p-2 mb-4 border border-gray-300 rounded-md">
                 <User className="text-gray-500 mr-2"/>
                 <input 
-                type="text"
+                type="text" //aqui é onde fica o tipo de dado de cada input
                 placeholder="Nome Completo"
                 className="flex-grow outline-none border-none bg-transparent text-gray-700"
                 />
@@ -78,7 +80,7 @@ const ColaboratorSignIn = () => {
             <div className="flex items-center w-full p-2 mb-4 border border-gray-300 rounded-md">
                 <Phone className="text-gray-500 mr-2"/>
                 <input 
-                    type="tel" // Alterado para 'tel' para melhor usabilidade mobile
+                    type="tel"
                     placeholder="Contato"
                     className="flex-grow outline-none border-none bg-transparent text-gray-700"
                 />

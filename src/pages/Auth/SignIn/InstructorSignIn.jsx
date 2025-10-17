@@ -1,3 +1,5 @@
+//Página de cadastro de instrutores
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, IdCard, GraduationCap, ChevronDown} from 'lucide-react';

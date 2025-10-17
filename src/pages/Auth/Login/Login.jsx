@@ -1,3 +1,5 @@
+//Página de escolha do tipo de usuário para login
+
 import React from 'react';
 import logo from '../../../assets/Logo_Sem_Contorno.svg';
 import UserCard from '../../../components/common/UserCard';

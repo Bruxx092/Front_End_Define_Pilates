@@ -1,3 +1,5 @@
+//Página de inserção do código enviado para recuperação de senha
+
 import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg';
 import { useNavigate } from 'react-router-dom';
 

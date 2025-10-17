@@ -1,3 +1,5 @@
+//Página de cadastro da nova senha após recuperação
+
 import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';

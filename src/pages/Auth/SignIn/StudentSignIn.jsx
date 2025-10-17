@@ -1,3 +1,5 @@
+//Página de cadastro de alunos
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, PersonStanding, IdCard, Search} from 'lucide-react';
