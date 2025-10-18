@@ -108,7 +108,7 @@ export const sidebarConfigs = {
       {
         title: "Minhas Aulas",
         icon: Calendar,
-        path: "/aluno/aulas",
+        path: "/aluno/minhas-aulas",
       },
       {
         title: "Minha Evolução",

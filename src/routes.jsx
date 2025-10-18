@@ -16,6 +16,7 @@ import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
 import Faturas from "./pages/Aluno/Faturas";
+import MinhasAulas from "./pages/Aluno/MinhasAulas";
 import MinhaEvolucao from "./pages/MinhaEvolucao/minhaevolucao";
 import HistoricoAtestados from "./pages/MinhaEvolucao/HistoricoAtestados"; 
 import HistoricoAulasPage from "./pages/MinhaEvolucao/HistoricoAulas"; 
@@ -40,7 +41,8 @@ function AppRoutes() {
         <Route path="/aluno/minha-evolucao" element={<MinhaEvolucao />} />
         <Route path="/aluno/historico-atestados" element={<HistoricoAtestados />} />
         <Route path="/aluno/historico-aulas" element={<HistoricoAulasPage />} />
-        <Route path="/aluno/fotos" element={<FotosPage />} /> 
+        <Route path="/aluno/fotos" element={<FotosPage />} />
+        <Route path="/aluno/minhas-aulas" element={<MinhasAulas />} /> 
       </Routes>
     </Router>
   );
