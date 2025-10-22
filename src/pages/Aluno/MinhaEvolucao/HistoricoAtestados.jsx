@@ -1,45 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/Content/card";
-import { Button } from "@/components/ui/Content/button";
-import { Input } from "@/components/ui/Content/input";
-import {
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Search,
-  Calendar,
-  X,
-  Upload,
-  ArrowLeft,
-} from "lucide-react";
-
-const mockAtestados = [
-  {
-    id: 1,
-    date: "11/09/2025",
-    status: "Aprovado",
-    codigoDoenca: "A12.34",
-    fotoUrl: null,
-    medico: "Dr. Silva",
-  },
-  {
-    id: 2,
-    date: "20/09/2025",
-    status: "Pendente",
-    codigoDoenca: "B56.78",
-    fotoUrl: null,
-    medico: "Dra. Lima",
-  },
-  {
-    id: 3,
-    date: "05/10/2025",
-    status: "Aprovado",
-    codigoDoenca: "C90.12",
-    fotoUrl: null,
-    medico: "Dr. Souza",
-  },
-];
+import { Card, CardContent } from "../../components/ui/Content/Card";
+import { Button } from "../../components/ui/Content/Button";
+import { Input } from "../../components/ui/Content/Input";
+import { Calendar, Search, Plus, Upload, X, ArrowLeft } from "lucide-react";
+import axios from "axios";
 
 export default function AtestadoPage() {
   const [atestados, setAtestados] = useState([]);
@@ -61,55 +26,94 @@ export default function AtestadoPage() {
 
   const [isInstrutor, setIsInstrutor] = useState(false);
 
-  const setMockUserType = () => false; // true = instrutor, false = aluno
+  const token = localStorage.getItem("token"); // JWT do usuário logado
 
+  // Busca o usuário logado para determinar se é instrutor
+  const fetchUsuarioLogado = async () => {
+    try {
+      const response = await axios.get("/api/usuario", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const usuario = response.data;
+      setIsInstrutor(usuario.tipo === "instrutor");
+    } catch (err) {
+      console.error("Erro ao buscar usuário logado:", err);
+      setIsInstrutor(false);
+    }
+  };
+
+  // Busca os atestados via API
+  const fetchAtestados = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("/api/atestados", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { inicio: startDate, fim: endDate },
+      });
+      const data = response.data.map((item) => ({
+        ...item,
+        color: item.status === "Aprovado" ? "text-green-500" : "text-red-500",
+      }));
+      setAtestados(data);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError("Não foi possível carregar os atestados.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Envia um novo atestado (aluno)
+  const handleEnviarAtestado = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("date", novaDataConsulta);
+      formData.append("dias", novaQtdDias);
+      formData.append("codigoDoenca", novoCodigoDoenca);
+      formData.append("medico", novoMedico);
+      if (novaFoto) formData.append("foto", novaFoto);
+
+      await axios.post("/api/atestados", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      handleCloseAddModal();
+      fetchAtestados();
+    } catch (err) {
+      console.error(err);
+      alert("Falha ao enviar atestado");
+    }
+  };
+
+  // Inicialização
   useEffect(() => {
-    const usuario = JSON.parse(localStorage.getItem("usuario")) || {
-      id: 1,
-      tipo: "aluno",
-    };
-    usuario.tipo = setMockUserType() ? "instrutor" : "aluno";
-    localStorage.setItem("usuario", JSON.stringify(usuario));
-    setIsInstrutor(usuario.tipo === "instrutor");
+    fetchUsuarioLogado();
 
-    const fetchAtestados = async () => {
-      try {
-        setLoading(true);
-        const data = mockAtestados;
-        const normalized = data.map((item) => ({
-          ...item,
-          color: item.status === "Aprovado" ? "text-green-500" : "text-red-500",
-        }));
-        setAtestados(normalized);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError("Não foi possível carregar os atestados.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAtestados();
+    // Definir período inicial: mês vigente
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = now;
+    setStartDate(firstDay.toISOString().split("T")[0]);
+    setEndDate(lastDay.toISOString().split("T")[0]);
   }, []);
 
-  const parseDate = (dateString) => {
-    const [day, month, year] = dateString.split("/").map(Number);
-    return new Date(year, month - 1, day);
-  };
+  // Buscar atestados sempre que datas mudarem
+  useEffect(() => {
+    if (startDate && endDate) fetchAtestados();
+  }, [startDate, endDate]);
+
+  const parseDate = (dateString) => new Date(dateString);
 
   const handleFilter = () => {
     if (!startDate || !endDate) {
       setSearchActive(false);
       return;
     }
-    const start = parseDate(startDate);
-    const end = parseDate(endDate);
-    const filtered = atestados.filter((atestado) => {
-      const atestadoDate = parseDate(atestado.date);
-      return atestadoDate >= start && atestadoDate <= end;
-    });
-    setAtestados(filtered);
+    fetchAtestados();
     setSearchActive(true);
   };
 
@@ -124,7 +128,6 @@ export default function AtestadoPage() {
   };
 
   const handleOpenAddModal = () => setModalAddOpen(true);
-
   const handleCloseAddModal = () => {
     setModalAddOpen(false);
     setNovaDataConsulta("");
@@ -134,27 +137,8 @@ export default function AtestadoPage() {
     setNovaFoto(null);
   };
 
-  const handleEnviarAtestado = async () => {
-    try {
-      const novoAtestado = {
-        id: atestados.length + 1,
-        date: novaDataConsulta,
-        status: "Pendente",
-        codigoDoenca: novoCodigoDoenca,
-        medico: novoMedico,
-        fotoUrl: novaFoto ? URL.createObjectURL(novaFoto) : null,
-      };
-      setAtestados([{ ...novoAtestado, color: "text-red-500" }, ...atestados]);
-      handleCloseAddModal();
-    } catch (error) {
-      console.error(error);
-      alert("Falha ao enviar atestado");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">
-      {/* Botão Voltar */}
       <button
         onClick={() => window.history.back()}
         className="flex items-center gap-2 mb-4 text-teal-500 hover:text-teal-700"
@@ -185,8 +169,7 @@ export default function AtestadoPage() {
           </h2>
           <div className="relative w-full sm:w-1/3">
             <Input
-              type="text"
-              placeholder="Data Início (ex: 01/09/2025)"
+              type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="pl-8"
@@ -195,8 +178,7 @@ export default function AtestadoPage() {
           </div>
           <div className="relative w-full sm:w-1/3">
             <Input
-              type="text"
-              placeholder="Data Fim (ex: 30/10/2025)"
+              type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="pl-8"
@@ -309,7 +291,7 @@ export default function AtestadoPage() {
         </div>
       )}
 
-      {/* Modal adicionar */}
+      {/* Modal adicionar (apenas aluno) */}
       {modalAddOpen && !isInstrutor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-md p-6 space-y-4 relative overflow-y-auto max-h-[90vh]">
@@ -321,8 +303,7 @@ export default function AtestadoPage() {
             </button>
             <h2 className="text-xl font-semibold mb-4">Enviar Novo Atestado</h2>
             <Input
-              type="text"
-              placeholder="Data da consulta (ex: 10/10/2025)"
+              type="date"
               value={novaDataConsulta}
               onChange={(e) => setNovaDataConsulta(e.target.value)}
             />

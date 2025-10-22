@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, Trash2, ArrowLeft } from "lucide-react";
-
-// Mock inicial
-const mockFotos = [
-  { id: 1, nome: "Chegada", data: "2023-01-15", descricao: "Primeira aula", ano: 2023, url: "https://via.placeholder.com/300" },
-  { id: 2, nome: "Agora", data: "2024-05-10", descricao: "Progresso atual", ano: 2024, url: "https://via.placeholder.com/300" },
-  { id: 3, nome: "Progresso", data: "2024-08-20", descricao: "Resultado final", ano: 2024, url: "https://via.placeholder.com/300" },
-];
+import axios from "axios";
 
 export default function FotosPage() {
   const [fotos, setFotos] = useState([]);
-  const [todasFotos, setTodasFotos] = useState([]);
   const [anoFiltro, setAnoFiltro] = useState("");
   const [isInstrutor, setIsInstrutor] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -18,100 +11,110 @@ export default function FotosPage() {
   const [nome, setNome] = useState("");
   const [data, setData] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [modalVisualizar, setModalVisualizar] = useState({ aberto: false, foto: null });
+  const [modalVisualizar, setModalVisualizar] = useState({
+    aberto: false,
+    foto: null,
+  });
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
 
-  const setMockUserType = () => true;
+  const token = localStorage.getItem("token"); // JWT do usuário logado
 
-  useEffect(() => {
-    const usuario = JSON.parse(localStorage.getItem("usuario")) || { id: 1, tipo: "aluno" };
-    usuario.tipo = setMockUserType() ? "instrutor" : "aluno";
-    localStorage.setItem("usuario", JSON.stringify(usuario));
-    setIsInstrutor(usuario.tipo === "instrutor");
+  // Busca informações do usuário logado
+  const fetchUsuarioLogado = async () => {
+    try {
+      const response = await axios.get("/api/usuario", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsInstrutor(response.data.tipo === "instrutor");
+    } catch (err) {
+      console.error("Erro ao buscar usuário logado:", err);
+      setIsInstrutor(false);
+    }
+  };
 
-    fetchFotos();
-  }, []);
-
+  // Busca fotos via API
   const fetchFotos = async () => {
     try {
-      const dados = mockFotos;
-      setTodasFotos(dados);
-      setFotos(dados);
-    } catch (error) {
-      console.error("Erro ao buscar fotos:", error);
+      const response = await axios.get("/api/fotos", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFotos(response.data);
+      const anos = [
+        ...new Set(response.data.map((f) => new Date(f.data).getFullYear())),
+      ];
+      setAnosDisponiveis(anos);
+    } catch (err) {
+      console.error("Erro ao buscar fotos:", err);
       setFotos([]);
     }
   };
 
-  const uploadFotoAPI = async (file, nome, data, descricao) => {
-    try {
-      return {
-        id: todasFotos.length + 1,
-        nome,
-        data,
-        descricao,
-        ano: new Date(data).getFullYear(),
-        url: URL.createObjectURL(file),
-      };
-    } catch (error) {
-      console.error("Erro ao enviar foto:", error);
-      return null;
-    }
-  };
+  useEffect(() => {
+    fetchUsuarioLogado();
+    fetchFotos();
+  }, []);
 
   const handleFiltroAno = (e) => {
     const ano = e.target.value;
     setAnoFiltro(ano);
-
     if (!ano) {
-      setFotos(todasFotos);
+      fetchFotos();
     } else {
-      setFotos(todasFotos.filter((f) => f.ano.toString() === ano));
+      setFotos((prev) =>
+        prev.filter((f) => new Date(f.data).getFullYear().toString() === ano)
+      );
     }
   };
 
+  // Upload da nova foto
   const handleUploadFoto = async () => {
     if (!novaFoto || !nome || !data || !descricao) {
-      alert("Preencha todos os campos: nome, data, descrição e selecione uma foto.");
+      alert(
+        "Preencha todos os campos: nome, data, descrição e selecione uma foto."
+      );
       return;
     }
 
-    const nova = await uploadFotoAPI(novaFoto, nome, data, descricao);
-    if (nova) {
-      const novasFotos = [nova, ...todasFotos];
-      setTodasFotos(novasFotos);
+    const formData = new FormData();
+    formData.append("file", novaFoto);
+    formData.append("nome", nome);
+    formData.append("data", data);
+    formData.append("descricao", descricao);
 
-      if (anoFiltro) {
-        setFotos(novasFotos.filter((f) => f.ano.toString() === anoFiltro));
-      } else {
-        setFotos(novasFotos);
-      }
-
+    try {
+      await axios.post("/api/fotos", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
       setOpenModal(false);
       setNovaFoto(null);
       setNome("");
       setData("");
       setDescricao("");
-    } else {
+      fetchFotos();
+    } catch (err) {
+      console.error("Erro ao enviar foto:", err);
       alert("Falha ao enviar a foto");
     }
   };
 
-  const handleExcluirFoto = (id) => {
-    const novasFotos = todasFotos.filter((f) => f.id !== id);
-    setTodasFotos(novasFotos);
-
-    if (anoFiltro) {
-      setFotos(novasFotos.filter((f) => f.ano.toString() === anoFiltro));
-    } else {
-      setFotos(novasFotos);
+  const handleExcluirFoto = async (id) => {
+    if (!confirm("Deseja realmente excluir esta foto?")) return;
+    try {
+      await axios.delete(`/api/fotos/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchFotos();
+    } catch (err) {
+      console.error("Erro ao excluir foto:", err);
+      alert("Falha ao excluir a foto");
     }
   };
 
-  const anosDisponiveis = [...new Set([...mockFotos, ...todasFotos].map((f) => f.ano))];
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      {/* Botão Voltar */}
       <button
         onClick={() => window.history.back()}
         className="flex items-center gap-2 mb-4 text-teal-500 hover:text-teal-700"
@@ -119,7 +122,9 @@ export default function FotosPage() {
         <ArrowLeft size={18} /> Voltar
       </button>
 
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Fotos do Aluno</h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        Fotos do Aluno
+      </h1>
 
       {/* Filtro e botão adicionar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center justify-between">
@@ -153,13 +158,19 @@ export default function FotosPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {fotos.length ? (
           fotos.map((foto) => (
-            <div key={foto.id} className="bg-white rounded shadow overflow-hidden relative">
+            <div
+              key={foto.id}
+              className="bg-white rounded shadow overflow-hidden relative"
+            >
               <button
                 onClick={() => setModalVisualizar({ aberto: true, foto })}
                 className="w-full p-0 m-0 border-none bg-transparent cursor-pointer"
-                aria-label={`Visualizar foto ${foto.nome}`}
               >
-                <img src={foto.url} alt={foto.descricao} className="w-full h-48 object-cover" />
+                <img
+                  src={foto.url}
+                  alt={foto.descricao}
+                  className="w-full h-48 object-cover"
+                />
               </button>
 
               <div className="p-3">
@@ -180,12 +191,14 @@ export default function FotosPage() {
             </div>
           ))
         ) : (
-          <p className="text-gray-500 col-span-full text-center">Nenhuma foto encontrada.</p>
+          <p className="text-gray-500 col-span-full text-center">
+            Nenhuma foto encontrada.
+          </p>
         )}
       </div>
 
       {/* Modal Adicionar Foto */}
-      {openModal && (
+      {openModal && isInstrutor && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md overflow-y-auto max-h-[90vh] relative">
             <button
@@ -245,7 +258,6 @@ export default function FotosPage() {
       {modalVisualizar.aberto && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4 overflow-y-auto">
           <div className="relative bg-white p-4 rounded shadow-lg max-w-3xl w-full">
-            {/* botão fixo acima da imagem */}
             <button
               className="fixed top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 z-50"
               onClick={() => setModalVisualizar({ aberto: false, foto: null })}
@@ -259,8 +271,12 @@ export default function FotosPage() {
               className="w-full h-auto rounded max-h-[85vh] object-contain"
             />
             <div className="mt-4">
-              <h3 className="font-medium text-lg">{modalVisualizar.foto.nome}</h3>
-              <p className="text-sm text-gray-500">{modalVisualizar.foto.data}</p>
+              <h3 className="font-medium text-lg">
+                {modalVisualizar.foto.nome}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {modalVisualizar.foto.data}
+              </p>
               <p className="text-sm">{modalVisualizar.foto.descricao}</p>
             </div>
           </div>
