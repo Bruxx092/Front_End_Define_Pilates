@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 
 import SignIn from "./pages/Auth/SignIn/SignIn";
@@ -17,10 +18,12 @@ import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
 import Faturas from "./pages/Aluno/Faturas";
 import MinhasAulas from "./pages/Aluno/MinhasAulas";
-import MinhaEvolucao from "./pages/MinhaEvolucao/minhaevolucao";
-import HistoricoAtestados from "./pages/MinhaEvolucao/HistoricoAtestados"; 
-import HistoricoAulasPage from "./pages/MinhaEvolucao/HistoricoAulas"; 
-import FotosPage from "./pages/MinhaEvolucao/Fotos"; // <-- import do Fotos.jsx
+import MinhaEvolucao from "./pages/Aluno/MinhaEvolucao/minhaevolucao";
+import HistoricoAtestados from "./pages/Aluno/MinhaEvolucao/HistoricoAtestados";
+import HistoricoAulasPage from "./pages/Aluno/MinhaEvolucao/HistoricoAulas";
+import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
+import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
+import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
   return (
@@ -36,13 +39,24 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/code" element={<Code />} />
         <Route path="/new-password" element={<NewPassword />} />
-        <Route path="/aluno/planos" element={<Meus_Planos />} />
-        <Route path="/aluno/faturas" element={<Faturas />} />
-        <Route path="/aluno/minha-evolucao" element={<MinhaEvolucao />} />
-        <Route path="/aluno/historico-atestados" element={<HistoricoAtestados />} />
-        <Route path="/aluno/historico-aulas" element={<HistoricoAulasPage />} />
-        <Route path="/aluno/fotos" element={<FotosPage />} />
-        <Route path="/aluno/minhas-aulas" element={<MinhasAulas />} /> 
+
+        <Route
+          path="/aluno/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="planos" element={<Meus_Planos />} />
+          <Route path="faturas" element={<Faturas />} />
+          <Route path="minha-evolucao" element={<MinhaEvolucao />} />
+          <Route path="historico-atestados" element={<HistoricoAtestados />} />
+          <Route path="historico-aulas" element={<HistoricoAulasPage />} />
+          <Route path="fotos" element={<FotosPage />} />
+          <Route path="minhas-aulas" element={<MinhasAulas />} />
+          <Route path="dashboard" element={<DashboardEstudante />} />
+        </Route>
       </Routes>
     </Router>
   );
