@@ -1,8 +1,8 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "../../components/ui/Content/Card";
-import { Button } from "../../components/ui/Content/Button";
-import { Input } from "../../components/ui/Content/Input";
+import { Card, CardContent } from "@/components/ui/Content/card";
+import { Button } from "@/components/ui/Content/button";
+import { Input } from "@/components/ui/Content/input";
 import { Calendar, Search, Plus, Upload, X, ArrowLeft } from "lucide-react";
 import axios from "axios";
 
