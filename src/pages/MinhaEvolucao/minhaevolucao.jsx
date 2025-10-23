@@ -25,9 +25,22 @@ export default function MinhaEvolucao() {
   const { isMobile, sidebarWidth } = useSidebar();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const [data, setData] = useState([]);
-  const [aluno, setAluno] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState([
+    { name: "Janeiro", desempenho: 0, fill: CHART_COLORS[0] },
+    { name: "Fevereiro", desempenho: 0, fill: CHART_COLORS[1] },
+  ]);
+  const [aluno, setAluno] = useState({
+    nome: "—",
+    email: "—",
+    telefone: "—",
+    modalidade: "—",
+    ativo: true,
+    reavaliacao: "—",
+    observacoes: "",
+    feedback: "",
+    caracteristicas: { flexibilidade: "", postura: "", forca: "", extras: [] },
+  });
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [isInstrutor, setIsInstrutor] = useState(false);
@@ -35,12 +48,12 @@ export default function MinhaEvolucao() {
   const { alunoId: alunoIdParam } = useParams();
   const usuarioStorage = JSON.parse(localStorage.getItem("usuario") || "null");
 
-  const [observacoes, setObservacoes] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [observacoes, setObservacoes] = useState(aluno.observacoes);
+  const [feedback, setFeedback] = useState(aluno.feedback);
   const [caracteristicas, setCaracteristicas] = useState([
-    { id: "flexibilidade", label: "Flexibilidade", value: "" },
-    { id: "postura", label: "Postura", value: "" },
-    { id: "forca", label: "Força", value: "" },
+    { id: "flexibilidade", label: "Flexibilidade", value: aluno.caracteristicas.flexibilidade },
+    { id: "postura", label: "Postura", value: aluno.caracteristicas.postura },
+    { id: "forca", label: "Força", value: aluno.caracteristicas.forca },
   ]);
 
   useEffect(() => {
@@ -58,7 +71,7 @@ export default function MinhaEvolucao() {
       try {
         const token = localStorage.getItem("token") || "";
         const alunoId = alunoIdParam || (usuarioStorage && usuarioStorage.id) || null;
-        if (!alunoId) throw new Error("ID do aluno não encontrado.");
+        if (!alunoId) return; // apenas não faz nada se não houver ID
 
         const headers = { Authorization: token ? `Bearer ${token}` : "" };
         const [alunoRes, evolucaoRes] = await Promise.all([
@@ -66,14 +79,8 @@ export default function MinhaEvolucao() {
           fetch(`${API_BASE}/api/minha-evolucao/${alunoId}`, { headers, signal: controller.signal }),
         ]);
 
-        if (!alunoRes.ok) {
-          const text = await alunoRes.text().catch(() => null);
-          throw new Error(`Erro ao buscar aluno: ${alunoRes.status} ${text || alunoRes.statusText}`);
-        }
-        if (!evolucaoRes.ok) {
-          const text = await evolucaoRes.text().catch(() => null);
-          throw new Error(`Erro ao buscar evolução: ${evolucaoRes.status} ${text || evolucaoRes.statusText}`);
-        }
+        if (!alunoRes.ok) return;
+        if (!evolucaoRes.ok) return;
 
         const alunoData = await alunoRes.json();
         const evolucaoData = await evolucaoRes.json();
@@ -172,7 +179,6 @@ export default function MinhaEvolucao() {
       setObservacoes(updated.observacoes || "");
       setFeedback(updated.feedback || "");
 
-      // Atualiza características após salvar
       const updatedCaracteristicas = [
         { id: "flexibilidade", label: "Flexibilidade", value: updated?.caracteristicas?.flexibilidade || "" },
         { id: "postura", label: "Postura", value: updated?.caracteristicas?.postura || "" },
@@ -188,7 +194,6 @@ export default function MinhaEvolucao() {
       }
 
       setCaracteristicas(updatedCaracteristicas);
-
       alert("Salvo com sucesso.");
     } catch (err) {
       console.error("Erro ao salvar:", err);
@@ -217,12 +222,6 @@ export default function MinhaEvolucao() {
   const handleKeyNavigation = (path, e) => {
     if (e.key === "Enter" || e.key === " ") navigate(path);
   };
-
-  if (loading)
-    return <div className="flex items-center justify-center min-h-screen text-gray-600">Carregando dados...</div>;
-
-  if (error)
-    return <div className="flex items-center justify-center min-h-screen text-red-500">Erro: {error}</div>;
 
   const podeEditar = isInstrutor;
 
@@ -286,8 +285,7 @@ export default function MinhaEvolucao() {
 
               {/* Botões */}
               <div className="px-4 pb-4 md:px-8 md:pb-8 border-t pt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
-                {[
-                  { path: "/aluno/historico-atestados", icon: <FileText className="w-5 h-5 text-gray-600 mb-1" />, label: "Histórico de Atestados" },
+                {[{ path: "/aluno/historico-atestados", icon: <FileText className="w-5 h-5 text-gray-600 mb-1" />, label: "Histórico de Atestados" },
                   { path: "/aluno/historico-aulas", icon: <BookOpen className="w-5 h-5 text-gray-600 mb-1" />, label: "Histórico de Aulas" },
                   { path: "/aluno/fotos", icon: <ImageIcon className="w-5 h-5 text-gray-600 mb-1" />, label: "Fotos" },
                 ].map((btn, i) => (
