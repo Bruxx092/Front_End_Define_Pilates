@@ -9,16 +9,6 @@ import DateInput from "../../../components/forms/DateInput";
 const InstructorSignIn = () => {
     const [documentType, setDocumentType] = useState('CREF');
     const [cadastroSucesso, setCadastroSucesso] = useState(false);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        if(cadastroSucesso) {
-            const timer = setTimeout(() => {
-                navigate('/login');
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [cadastroSucesso, navigate]);
 
     const handlesubmit = (e) => {
         e.preventDefault();

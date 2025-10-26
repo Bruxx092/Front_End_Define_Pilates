@@ -8,16 +8,6 @@ import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg';
 const ColaboratorSignIn = () => {
     const [documentType, setDocumentType] = useState('Administrador'); //função para selecionar se é adm ou recepcionista   
     const [cadastroSucesso, setCadastroSucesso] = useState(false); //estado para mostrar a mensagem de sucesso
-    const navigate = useNavigate(); //hook para navegação entre páginas
-
-    useEffect(() => { //aqui é o efeito de que se o cadastro for feito da forma correta, ele redireciona para a página de login
-        if(cadastroSucesso) {
-            const timer = setTimeout(() => {
-                navigate('/login');
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [cadastroSucesso, navigate]);
 
     const handlesubmit = (e) => {
         e.preventDefault();
