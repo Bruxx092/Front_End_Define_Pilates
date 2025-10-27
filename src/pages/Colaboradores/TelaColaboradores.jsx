@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter, ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // <-- Import do hook de navegação
+import { Search, Filter, ChevronDown, UserPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function ProfessoresPage() {
-  const navigate = useNavigate(); // <-- Hook do react-router-dom
-  const [professores, setProfessores] = useState([]);
+export default function ColaboradoresPage() {
+  const navigate = useNavigate();
+  const [colaboradores, setColaboradores] = useState([]);
   const [busca, setBusca] = useState("");
   const [modalidadeFiltro, setModalidadeFiltro] = useState("");
   const [ordenacao, setOrdenacao] = useState("");
 
-  // 🔹 MOCK: lista inicial
-  const mockProfessores = [
+  // 🔹 MOCK temporário
+  const mockColaboradores = [
     { id: 1, nome: "Ana Souza", modalidade: "Yoga" },
     { id: 2, nome: "Carlos Souza", modalidade: "Pilates" },
     { id: 3, nome: "Samara da Silva", modalidade: "Curso" },
@@ -19,24 +19,15 @@ export default function ProfessoresPage() {
   ];
 
   useEffect(() => {
-    // 🔹 No futuro: buscar da API
-    /*
-    const token = localStorage.getItem("token");
-    axios.get("/api/professores", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setProfessores(res.data))
-    .catch(err => console.error("Erro ao buscar professores:", err));
-    */
-    setProfessores(mockProfessores);
+    setColaboradores(mockColaboradores);
   }, []);
 
-  // 🔹 Filtro e ordenação
-  const professoresFiltrados = professores
+  // 🔹 Filtragem e ordenação
+  const colaboradoresFiltrados = colaboradores
     .filter(
-      (p) =>
-        p.nome.toLowerCase().includes(busca.toLowerCase()) &&
-        (modalidadeFiltro ? p.modalidade === modalidadeFiltro : true)
+      (c) =>
+        c.nome.toLowerCase().includes(busca.toLowerCase()) &&
+        (modalidadeFiltro ? c.modalidade === modalidadeFiltro : true)
     )
     .sort((a, b) => {
       if (ordenacao === "nomeAZ") return a.nome.localeCompare(b.nome);
@@ -44,19 +35,35 @@ export default function ProfessoresPage() {
       return 0;
     });
 
-  // 🔹 Função de navegação
+  // 🔹 Ir para ficha técnica
   const handleVisualizar = (id) => {
-    navigate(`/colaboradores/${id}`); // <-- Envia para rota dinâmica
+    navigate(`/colaboradores/${id}`);
+  };
+
+  // 🔹 Ir para cadastro de colaborador
+  const handleCadastrar = (e) => {
+    e.stopPropagation(); // ⛔ evita que o clique "vaze" para outro botão
+    navigate("/colaborator-signin"); // ✅ Rota correta
   };
 
   return (
     <div className="min-h-screen bg-[#f8fbff] p-4 sm:p-8 flex flex-col items-center">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-sm p-6">
-        <h1 className="text-2xl font-semibold mb-6 text-gray-800">
-          Colaboradores
-        </h1>
+        {/* 🔹 Cabeçalho */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-800">
+            Colaboradores
+          </h1>
+          <button
+            onClick={handleCadastrar}
+            className="flex items-center gap-2 bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 transition"
+          >
+            <UserPlus size={18} />
+            Cadastrar Colaborador
+          </button>
+        </div>
 
-        {/* 🔹 Barra de Filtros */}
+        {/* 🔹 Barra de filtros */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center justify-between">
           {/* Busca */}
           <div className="relative w-full sm:w-1/3">
@@ -70,7 +77,7 @@ export default function ProfessoresPage() {
             />
           </div>
 
-          {/* Filtro por modalidade */}
+          {/* Filtro */}
           <div className="relative w-full sm:w-1/3">
             <select
               value={modalidadeFiltro}
@@ -85,7 +92,7 @@ export default function ProfessoresPage() {
             <Filter className="absolute right-3 top-2.5 text-gray-400" size={18} />
           </div>
 
-          {/* Ordenar */}
+          {/* Ordenação */}
           <div className="relative w-full sm:w-1/3">
             <select
               value={ordenacao}
@@ -113,17 +120,17 @@ export default function ProfessoresPage() {
               </tr>
             </thead>
             <tbody>
-              {professoresFiltrados.length > 0 ? (
-                professoresFiltrados.map((prof) => (
+              {colaboradoresFiltrados.length > 0 ? (
+                colaboradoresFiltrados.map((colab) => (
                   <tr
-                    key={prof.id}
+                    key={colab.id}
                     className="border-t hover:bg-gray-50 transition duration-100"
                   >
-                    <td className="px-4 py-2 text-gray-800">{prof.nome}</td>
-                    <td className="px-4 py-2 text-gray-600">{prof.modalidade}</td>
+                    <td className="px-4 py-2 text-gray-800">{colab.nome}</td>
+                    <td className="px-4 py-2 text-gray-600">{colab.modalidade}</td>
                     <td className="px-4 py-2 text-center">
                       <button
-                        onClick={() => handleVisualizar(prof.id)} // <-- Aqui faz a navegação
+                        onClick={() => handleVisualizar(colab.id)}
                         className="px-3 py-1.5 bg-teal-500 text-white text-sm rounded-md hover:bg-teal-600 transition"
                       >
                         Visualizar
@@ -134,7 +141,7 @@ export default function ProfessoresPage() {
               ) : (
                 <tr>
                   <td colSpan={3} className="text-center text-gray-500 py-4 italic">
-                    Nenhum professor encontrado.
+                    Nenhum colaborador encontrado.
                   </td>
                 </tr>
               )}
@@ -145,10 +152,8 @@ export default function ProfessoresPage() {
 
       {/* 🔹 Rodapé */}
       <footer className="text-gray-600 text-sm mt-10 text-center space-y-1">
-        <p>📞 Telefone/WhatsApp: (11) 99999-9999</p>
-        <p>📧 Email: academia.definepilates@gmail.com</p>
-        <p>🕒 Horário: Seg-Sex 8h às 20h | Sáb 8h às 14h</p>
-        <p>📍 Rua da Academia Pilates, 123</p>
+        <p>📞 Telefone/WhatsApp: (11) 94142-4166</p>
+        <p>📧 Unidade 1: José Aldo Piassi, 165, São Miguel Paulista</p>
       </footer>
     </div>
   );
