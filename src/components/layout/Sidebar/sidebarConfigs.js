@@ -20,7 +20,7 @@ export const sidebarConfigs = {
       {
         title: "Colaboradores",
         icon: Briefcase,
-        path: "/administrador/colaboradores",
+        path: "/colaboradores",
       },
       {
         title: "Estudantes",

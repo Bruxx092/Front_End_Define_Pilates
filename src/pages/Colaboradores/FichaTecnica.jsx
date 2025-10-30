@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Edit, Save, X } from "lucide-react";
 
@@ -35,7 +35,7 @@ export default function FichaTecnica() {
     };
 
     setColaborador(mockData);
-    setFormState(mockData); // Inicializa o estado do formulário
+    setFormState(mockData);
   }, [id]);
 
   if (!colaborador) {
@@ -46,7 +46,6 @@ export default function FichaTecnica() {
     );
   }
 
-  // 🔹 Manipulação de inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormState({ ...formState, [name]: value });
@@ -58,15 +57,13 @@ export default function FichaTecnica() {
     setFormState({ ...formState, [field]: newArray });
   };
 
-  // 🔹 Salvar alterações
   const handleSave = () => {
     setColaborador(formState);
     setEditMode(false);
     // Aqui você pode enviar para API via axios
-    // axios.put(`/api/colaboradores/${id}`, formState, { headers: { Authorization: `Bearer ${token}` } })
+    // axios.put(`/api/colaboradores/${id}`, formState)
   };
 
-  // 🔹 Cancelar alterações
   const handleCancel = () => {
     setFormState(colaborador);
     setEditMode(false);
@@ -143,7 +140,7 @@ export default function FichaTecnica() {
                   name="cref"
                   value={formState.cref}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-2 py-1"
+                  className="w1-full border border-gray-300 rounded px-2 py-1"
                 />
               ) : (
                 <p className="font-medium">{formState.cref}</p>
@@ -169,11 +166,15 @@ export default function FichaTecnica() {
                   <input
                     key={i}
                     value={h}
-                    onChange={(e) => handleArrayChange("horariosFixos", i, e.target.value)}
+                    onChange={(e) =>
+                      handleArrayChange("horariosFixos", i, e.target.value)
+                    }
                     className="w-full border border-gray-300 rounded px-2 py-1 mb-1"
                   />
                 ) : (
-                  <p key={i} className="font-medium">{h}</p>
+                  <p key={i} className="font-medium">
+                    {h}
+                  </p>
                 )
               )}
 
@@ -235,7 +236,9 @@ export default function FichaTecnica() {
               <input
                 key={i}
                 value={e}
-                onChange={(e) => handleArrayChange("experiencia", i, e.target.value)}
+                onChange={(e) =>
+                  handleArrayChange("experiencia", i, e.target.value)
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mb-1"
               />
             ))
