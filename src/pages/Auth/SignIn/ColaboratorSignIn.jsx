@@ -1,5 +1,3 @@
-//Página de cadastro de colaboradores
-
 import React, { useState, useEffect } from "react";
 import { 
     User, Mail, Lock, Search, FileBadge, ChevronDown, Phone, 
@@ -31,7 +29,7 @@ const ColaboratorSignIn = () => {
             email_user: "",
             fk_id_estudio: 1, // 1 = Itaquera, 2 = São Miguel
         },
-        senha_user: "",
+        senha_user: "", //valor passado como None || string vazia
         endereco_data: {
             tipo_endereco: "residencial",
             endereco: "",
@@ -231,7 +229,7 @@ const ColaboratorSignIn = () => {
                         required disabled={isLoading}
                     />
                 </div>
-                <div className="flex items-center flex-1 p-2 border border-gray-300 rounded-md">
+                {/* <div className="flex items-center flex-1 p-2 border border-gray-300 rounded-md">
                     <Lock className="text-gray-500 mr-2"/>
                     <input 
                         type="password"
@@ -240,9 +238,10 @@ const ColaboratorSignIn = () => {
                         name="senha_user"
                         value={formData.senha_user}
                         onChange={(e) => setFormData(prev => ({ ...prev, senha_user: e.target.value }))}
-                        required disabled={isLoading}
+                        // required 
+                        disabled={isLoading}
                     />
-                </div>
+                </div> */}
             </div>
             
 
