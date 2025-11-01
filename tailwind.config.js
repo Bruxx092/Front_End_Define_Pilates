@@ -1,24 +1,48 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  darkMode: ["class"],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
+        "blumine": {
+          "50": "#f1f9ff",
+          "100": "#e2f1fd",
+          "200": "#bfe4ff",
+          "300": "#89cfff",
+          "400": "#43b7ff",
+          "500": "#17a3f0",
+          "600": "#0085ca",
+          "700": "#006aa2",
+          "800": "#005987",
+          "900": "#1A5276",
+          "950": "#062f48"
+        },        
+        "bismark": {
+          "50": "#f1fcff",
+          "100": "#dff4ff",
+          "200": "#bfeaff",
+          "300": "#9adcff",
+          "400": "#70c4fa",
+          "500": "#60acdc",
+          "600": "#498ab3",
+          "700": "#3c6f8f",
+          "800": "#406882",
+          "900": "#2d4b5f",
+          "950": "#193141"
+        },
         "shadow-green": {
-          50: '#f1fcfc',
-          100: '#e0f6f4',
-          200: '#9BC4C1',
-          300: '#9ee2dd',
-          400: '#75ccc7',
-          500: '#64b3ae',
-          600: '#4d908d',
-          700: '#3f7471',
-          800: '#345e5b',
-          900: '#2f4e4c',
-          950: '#1a3332',
+          50: "#f1fcfc",
+          100: "#e0f6f4",
+          200: "#9BC4C1",
+          300: "#9ee2dd",
+          400: "#75ccc7",
+          500: "#64b3ae",
+          600: "#4d908d",
+          700: "#3f7471",
+          800: "#345e5b",
+          900: "#2f4e4c",
+          950: "#1a3332",
         },
         "turquoise-blue": {
           50: "#ecfefe",
@@ -31,7 +55,7 @@ module.exports = {
           700: "#00787c",
           800: "#056264",
           900: "#165153",
-          950: "#033637"
+          950: "#033637",
         },
         "eastern-blue": {
           50: "#effdfc",
@@ -44,7 +68,7 @@ module.exports = {
           700: "#24746f",
           800: "#1c5d59",
           900: "#214c49",
-          950: "#0d2e2c"
+          950: "#0d2e2c",
         },
         "calypso": {
           50: "#f3f8fd",
@@ -57,7 +81,7 @@ module.exports = {
           700: "#2B668B",
           800: "#295877",
           900: "#284960",
-          950: "#162f3f"
+          950: "#162f3f",
         },
         "silver-tree": {
           50: "#f3fcf9",
@@ -70,7 +94,7 @@ module.exports = {
           700: "#447162",
           800: "#365a4e",
           900: "#314a41",
-          950: "#1a2d26"
+          950: "#1a2d26",
         },
         "java": {
           50: "#eefdff",
@@ -83,7 +107,7 @@ module.exports = {
           700: "#1d7681",
           800: "#1b6068",
           900: "#1f4f56",
-          950: "#0c343a"
+          950: "#0c343a",
         },
         "jungle-mist": {
           50: "#f1f9fa",
@@ -96,7 +120,7 @@ module.exports = {
           700: "#06717a",
           800: "#0e5e66",
           900: "#1a4e53",
-          950: "#0b3236"
+          950: "#0b3236",
         },
         "envy": {
           50: "#fafafa",
@@ -109,23 +133,37 @@ module.exports = {
           700: "#404040",
           800: "#262626",
           900: "#171717",
-          950: "#0a0a0a"
+          950: "#0a0a0a",
         },
         "dove-gray": {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          400: '#a1a1a1',
-          500: '#737373',
-          600: '#525252',
-          700: '#404040',
-          800: '#262626',
-          900: '#171717',
-          950: '#0a0a0a',
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d4d4d4",
+          400: "#a1a1a1",
+          500: "#737373",
+          600: "#525252",
+          700: "#404040",
+          800: "#262626",
+          900: "#171717",
+          950: "#0a0a0a",
         },
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
