@@ -177,8 +177,8 @@ export default function AgendaEstudio({ classes = sampleClasses }) {
         <div className="flex min-h-screen bg-gray-50 font-inter">
             {/* Componente da Sidebar */}
             <SidebarUnificada
-                menuItems={sidebarConfigs.aluno.menuItems}
-                userInfo={sidebarConfigs.aluno.userInfo}
+                menuItems={sidebarConfigs.administrador.menuItems}
+                userInfo={sidebarConfigs.administrador.userInfo}
                 isOpen={menuOpen}
                 onOpenChange={setMenuOpen}
             />
