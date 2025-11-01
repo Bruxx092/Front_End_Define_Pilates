@@ -183,7 +183,7 @@ const ColaboratorSignIn = () => {
                 <Calendar className="text-gray-500 mr-2"/>
                 <input 
                     type="text" 
-                    placeholder="Data de Nascimento (AAAA-MM-DD)"
+                    placeholder="Data de Nascimento"
                     className="flex-grow outline-none border-none bg-transparent text-gray-700"
                     name="nasc_user"
                     value={formData.user_data.nasc_user}
