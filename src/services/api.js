@@ -10,7 +10,6 @@ const api = axios.create({
     timeout: 10000 
 });
 
-
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('accessToken');
@@ -19,21 +18,24 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
+
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            console.error('Sessão expirada ou não autorizada. Redirecionando para o login...');
+        if (error.response && [401, 403].includes(error.response.status)) {
+            console.error('Sessão expirada ou não autorizada. Redirecionando para o login em 3 segundos...');
             localStorage.removeItem('accessToken');
+            
             if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
+                setTimeout(() => {
+                    window.location.href = '/login'; 
+                }, 8000); 
             }
         }
-        return Promise.reject(error);
+        // O erro ainda é repassado para o componente
+        return Promise.reject(error); 
     }
 );
 

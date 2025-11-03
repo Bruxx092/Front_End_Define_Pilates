@@ -13,7 +13,6 @@ import InstructorSignIn from "./pages/Auth/SignIn/InstructorSignIn";
 import StudentSignIn from "./pages/Auth/SignIn/StudentSignIn";
 import LoginForm from "./pages/Auth/Login/LoginForm";
 import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
-import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
 import Faturas from "./pages/Aluno/Faturas";
@@ -24,6 +23,7 @@ import HistoricoAulasPage from "./pages/Aluno/MinhaEvolucao/HistoricoAulas";
 import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
 import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
 import Estudantes from "./pages/Admin/Estudantes";
+import AgendaEstudio from "./pages/Admin/AgendaEstudio";
 import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
@@ -38,7 +38,6 @@ function AppRoutes() {
         <Route path="/student-signin" element={<StudentSignIn />} />
         <Route path="/login-form" element={<LoginForm />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/code" element={<Code />} />
         <Route path="/new-password" element={<NewPassword />} />
 
         <Route
@@ -60,7 +59,7 @@ function AppRoutes() {
         </Route>
 
         <Route
-          path="/administrador/*"
+          path="/admin/*"
           element={
             <SidebarProvider>
               <Outlet />
@@ -68,6 +67,7 @@ function AppRoutes() {
           }
         >
           <Route path="estudantes" element={<Estudantes />} />
+          <Route path="agenda-estudio" element={<AgendaEstudio />} />
         </Route>
       </Routes>
     </Router>
