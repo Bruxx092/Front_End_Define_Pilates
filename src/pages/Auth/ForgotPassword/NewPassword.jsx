@@ -48,7 +48,7 @@ const NewPassword = () => {
             });
             
             setSenhaCadastrada(true);
-
+            setTimeout(() => navigate('/login-form'), 1000); 
         } catch (error) {
             const errorMsg = error.response?.data?.detail || "Erro ao redefinir a senha. O token pode estar expirado.";
             setMessage({ type: 'error', text: errorMsg });

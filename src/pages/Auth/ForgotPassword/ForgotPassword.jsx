@@ -14,7 +14,7 @@ const ForgotPassword = () => {
         setMessage(null);
 
         try {
-            await api.post('/auth/reset-password', {
+            await api.post('/auth/forgot-password', {
                 email: email 
             });
             
