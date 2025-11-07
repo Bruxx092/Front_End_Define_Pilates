@@ -24,6 +24,8 @@ import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
 import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
 import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
+import RegistroPresenca from "./pages/Instrutor/RegistroPresenca";
+import HistoricoPresenca from "./pages/Instrutor/HistoricoPresenca";
 import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
@@ -68,6 +70,18 @@ function AppRoutes() {
         >
           <Route path="estudantes" element={<Estudantes />} />
           <Route path="agenda-estudio" element={<AgendaEstudio />} />
+        </Route>
+
+          <Route
+          path="/instrutor/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="historico-presenca" element={<HistoricoPresenca />} />
+          <Route path="registro-presenca" element={<RegistroPresenca />} />
         </Route>
       </Routes>
     </Router>

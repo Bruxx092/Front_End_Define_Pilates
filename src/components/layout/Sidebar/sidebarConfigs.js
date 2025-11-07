@@ -153,7 +153,7 @@ export const sidebarConfigs = {
       {
         title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
-        path: "/instrutor/registro",
+        path: "/instrutor/registro-presenca",
       },
       {
         title: "Fichas de Evolução",
