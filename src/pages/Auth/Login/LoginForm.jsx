@@ -46,7 +46,9 @@ const LoginForm = () => {
             localStorage.setItem('accessToken', access_token);
             
             setMessage({ text: 'Login bem-sucedido! Redirecionando...', type: 'sucesso' });
-            setTimeout(() => navigate('/aluno/planos'), 1000); // Redireciona
+            // console.log(access_token)
+            
+            setTimeout(() => navigate('/aluno/dashboard'), 1000); 
             
         } catch (error) {
             const errorMessage = error.response?.data?.detail || "Falha na autenticação.";

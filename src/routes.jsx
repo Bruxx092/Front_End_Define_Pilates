@@ -13,8 +13,8 @@ import InstructorSignIn from "./pages/Auth/SignIn/InstructorSignIn";
 import StudentSignIn from "./pages/Auth/SignIn/StudentSignIn";
 import LoginForm from "./pages/Auth/Login/LoginForm";
 import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
-import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
+
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
 import Faturas from "./pages/Aluno/Faturas";
 import MinhasAulas from "./pages/Aluno/MinhasAulas";
@@ -23,7 +23,17 @@ import HistoricoAtestados from "./pages/Aluno/MinhaEvolucao/HistoricoAtestados";
 import HistoricoAulasPage from "./pages/Aluno/MinhaEvolucao/HistoricoAulas";
 import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
 import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
+
+import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
+import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
+import FichaTecnica from "./pages/Admin/FichaTecnica";
+
+import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
+import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
+import AulasAluno from "./pages/Instrutor/AulasAluno";
+import FotosAluno from "./pages/Instrutor/FotosAluno"; 
+
 import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
@@ -38,9 +48,9 @@ function AppRoutes() {
         <Route path="/student-signin" element={<StudentSignIn />} />
         <Route path="/login-form" element={<LoginForm />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/code" element={<Code />} />
         <Route path="/new-password" element={<NewPassword />} />
 
+        {/* ROTAS DO ALUNO*/}
         <Route
           path="/aluno/*"
           element={
@@ -59,6 +69,33 @@ function AppRoutes() {
           <Route path="dashboard" element={<DashboardEstudante />} />
         </Route>
 
+        {/* ROTAS DO INSTRUTOR*/}
+        <Route
+          path="/instrutor/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="evolucao-aluno" element={<EvolucaoAluno />} />
+        
+          <Route 
+            path="aluno/:alunoId/atestados" 
+            element={<AtestadoAluno />} 
+          />
+          <Route 
+            path="aluno/:alunoId/aulas" 
+            element={<AulasAluno />} 
+          />
+          <Route 
+            path="aluno/:alunoId/fotos" 
+            element={<FotosAluno />} 
+          />
+          
+        </Route>
+
+        {/* ROTAS ADMIN*/}
         <Route
           path="/admin/*"
           element={
@@ -67,7 +104,10 @@ function AppRoutes() {
             </SidebarProvider>
           }
         >
+          <Route path="estudantes" element={<Estudantes />} />
           <Route path="agenda-estudio" element={<AgendaEstudio />} />
+          <Route path="colaboradores" element={<ColaboradoresPage />} />
+          <Route path="colaboradores/:id" element={<FichaTecnica />} />
         </Route>
       </Routes>
     </Router>

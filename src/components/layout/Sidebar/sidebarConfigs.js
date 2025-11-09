@@ -158,7 +158,7 @@ export const sidebarConfigs = {
       {
         title: "Fichas de Evolução",
         icon: FileText,
-        path: "/instrutor/fichas",
+        path: "/instrutor/Evolucao-Aluno",
       },
     ],
     userInfo: {
