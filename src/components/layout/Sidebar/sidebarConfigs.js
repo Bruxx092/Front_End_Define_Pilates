@@ -31,7 +31,7 @@ export const sidebarConfigs = {
       {
         title: "Agenda dos Estúdios",
         icon: Calendar,
-        path: "/administrador/agenda",
+        path: "/admin/agenda-estudio",
       },
       {
         title: "Painel Geral dos Alunos",
