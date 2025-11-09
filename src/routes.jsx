@@ -28,6 +28,7 @@ import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
 import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
 import FichaTecnica from "./pages/Admin/FichaTecnica";
+import Alertas from "./pages/Admin/Alertas";
 
 import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
 import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
@@ -108,6 +109,7 @@ function AppRoutes() {
           <Route path="agenda-estudio" element={<AgendaEstudio />} />
           <Route path="colaboradores" element={<ColaboradoresPage />} />
           <Route path="colaboradores/:id" element={<FichaTecnica />} />
+          <Route path="alertas" element={<Alertas />} />
         </Route>
       </Routes>
     </Router>

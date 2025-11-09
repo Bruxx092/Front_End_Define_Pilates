@@ -13,6 +13,7 @@ import {
   Users,
   Receipt,
   TrendingUp,
+  Bell,
 } from "lucide-react";
 
 export const sidebarConfigs = {
@@ -42,6 +43,11 @@ export const sidebarConfigs = {
         title: "Finanças",
         icon: DollarSign,
         path: "/administrador/financas",
+      },
+      {
+        title: "Alertas",
+        icon: Bell,
+        path: "/admin/alertas",
       },
     ],
     userInfo: {
