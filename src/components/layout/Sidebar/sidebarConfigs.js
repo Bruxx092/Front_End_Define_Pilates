@@ -22,22 +22,17 @@ export const sidebarConfigs = {
       {
         title: "Colaboradores",
         icon: Briefcase,
-        path: "/administrador/colaboradores",
+        path: "/admin/colaboradores",
       },
       {
         title: "Estudantes",
         icon: GraduationCap,
-        path: "/administrador/estudantes",
+        path: "/admin/estudantes",
       },
       {
         title: "Agenda dos Estúdios",
         icon: Calendar,
         path: "/admin/agenda-estudio",
-      },
-      {
-        title: "Painel Geral dos Alunos",
-        icon: LayoutDashboard,
-        path: "/administrador/painel-alunos",
       },
       {
         title: "Finanças",
