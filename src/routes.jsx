@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 
 import SignIn from "./pages/Auth/SignIn/SignIn";
@@ -12,29 +13,34 @@ import InstructorSignIn from "./pages/Auth/SignIn/InstructorSignIn";
 import StudentSignIn from "./pages/Auth/SignIn/StudentSignIn";
 import LoginForm from "./pages/Auth/Login/LoginForm";
 import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
-import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
 
 import Meus_Planos from "./pages/Aluno/Meus_Planos";
 import Faturas from "./pages/Aluno/Faturas";
 import MinhasAulas from "./pages/Aluno/MinhasAulas";
-import MinhaEvolucao from "./pages/MinhaEvolucao/minhaevolucao";
-import HistoricoAtestados from "./pages/MinhaEvolucao/HistoricoAtestados";
-import HistoricoAulasPage from "./pages/MinhaEvolucao/HistoricoAulas";
-import FotosPage from "./pages/MinhaEvolucao/Fotos";
+import MinhaEvolucao from "./pages/Aluno/MinhaEvolucao/minhaevolucao";
+import HistoricoAtestados from "./pages/Aluno/MinhaEvolucao/HistoricoAtestados";
+import HistoricoAulasPage from "./pages/Aluno/MinhaEvolucao/HistoricoAulas";
+import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
+import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
 
-// Colaboradores
-import TelaColaboradores from "./pages/Colaboradores/TelaColaboradores";
-import FichaTecnica from "./pages/Colaboradores/FichaTecnica";
+import Estudantes from "./pages/Admin/Estudantes";
+import AgendaEstudio from "./pages/Admin/AgendaEstudio";
+import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
+import FichaTecnica from "./pages/Admin/FichaTecnica";
+
+import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
+import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
+import AulasAluno from "./pages/Instrutor/AulasAluno";
+import FotosAluno from "./pages/Instrutor/FotosAluno"; 
+
+import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
   return (
     <Router>
       <Routes>
-        {/* Rota inicial */}
         <Route path="/" element={<Navigate to="/signin" replace />} />
-
-        {/* Auth */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/login" element={<Login />} />
         <Route path="/colaborator-signin" element={<ColaboratorSignIn />} />
@@ -42,21 +48,67 @@ function AppRoutes() {
         <Route path="/student-signin" element={<StudentSignIn />} />
         <Route path="/login-form" element={<LoginForm />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/code" element={<Code />} />
         <Route path="/new-password" element={<NewPassword />} />
 
-        {/* Aluno */}
-        <Route path="/aluno/planos" element={<Meus_Planos />} />
-        <Route path="/aluno/faturas" element={<Faturas />} />
-        <Route path="/aluno/minhas-aulas" element={<MinhasAulas />} />
-        <Route path="/aluno/minha-evolucao" element={<MinhaEvolucao />} />
-        <Route path="/aluno/historico-atestados" element={<HistoricoAtestados />} />
-        <Route path="/aluno/historico-aulas" element={<HistoricoAulasPage />} />
-        <Route path="/aluno/fotos" element={<FotosPage />} />
+        {/* ROTAS DO ALUNO*/}
+        <Route
+          path="/aluno/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="planos" element={<Meus_Planos />} />
+          <Route path="faturas" element={<Faturas />} />
+          <Route path="minha-evolucao" element={<MinhaEvolucao />} />
+          <Route path="historico-atestados" element={<HistoricoAtestados />} />
+          <Route path="historico-aulas" element={<HistoricoAulasPage />} />
+          <Route path="fotos" element={<FotosPage />} />
+          <Route path="minhas-aulas" element={<MinhasAulas />} />
+          <Route path="dashboard" element={<DashboardEstudante />} />
+        </Route>
 
-        {/* Colaboradores */}
-        <Route path="/colaboradores" element={<TelaColaboradores />} />
-        <Route path="/colaboradores/:id" element={<FichaTecnica />} />
+        {/* ROTAS DO INSTRUTOR*/}
+        <Route
+          path="/instrutor/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="evolucao-aluno" element={<EvolucaoAluno />} />
+        
+          <Route 
+            path="aluno/:alunoId/atestados" 
+            element={<AtestadoAluno />} 
+          />
+          <Route 
+            path="aluno/:alunoId/aulas" 
+            element={<AulasAluno />} 
+          />
+          <Route 
+            path="aluno/:alunoId/fotos" 
+            element={<FotosAluno />} 
+          />
+          
+        </Route>
+
+        {/* ROTAS ADMIN*/}
+        <Route
+          path="/admin/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="estudantes" element={<Estudantes />} />
+          <Route path="agenda-estudio" element={<AgendaEstudio />} />
+          <Route path="colaboradores" element={<ColaboradoresPage />} />
+          <Route path="colaboradores/:id" element={<FichaTecnica />} />
+        </Route>
       </Routes>
     </Router>
   );

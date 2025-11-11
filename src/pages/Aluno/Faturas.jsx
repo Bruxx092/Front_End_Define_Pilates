@@ -4,7 +4,7 @@ import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import { useState } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
-import { FileText, Download, Eye, Send } from "lucide-react";
+import { FileText, Download, Eye, Filter } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -110,6 +110,7 @@ function InvoiceCard(props) {
 const Faturas = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isMobile, sidebarWidth } = useSidebar();
+  const [activeFilter, setActiveFilter] = useState("all"); // Add this state
 
   const invoices = [
     { month: "Outubro 2025", amount: "R$ 390,00", status: "paid" },
@@ -117,8 +118,19 @@ const Faturas = () => {
     { month: "Agosto 2025", amount: "R$ 390,00", status: "pending" },
     { month: "Julho 2025", amount: "R$ 390,00", status: "paid" },
     { month: "Junho 2025", amount: "R$ 390,00", status: "paid" },
-    { month: "Maio 2025", amount: "R$ 390,00", status: "paid" },
+    { month: "Maio 2025", amount: "R$ 390,00", status: "overdue" },
   ];
+
+  const filters = [
+    { id: "all", label: "Todas" },
+    { id: "paid", label: "Pagas" },
+    { id: "pending", label: "Em aberto" },
+    { id: "overdue", label: "Vencidas" },
+  ];
+
+  const filteredInvoices = invoices.filter(
+    (invoice) => activeFilter === "all" || invoice.status === activeFilter
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -139,24 +151,50 @@ const Faturas = () => {
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
           <div className="max-w-4xl mx-auto">
             <section className="space-y-4">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                Minhas Faturas
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600">
-                Visualize e gerencie todas as suas faturas mensais.
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                    Minhas Faturas
+                  </h2>
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">
+                    Visualize e gerencie todas as suas faturas mensais.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeFilter === filter.id
+                          ? "bg-[#1A5276] text-white"
+                          : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="space-y-3">
-                {invoices.map(function (invoice, index) {
-                  return (
-                    <InvoiceCard
-                      key={index}
-                      month={invoice.month}
-                      amount={invoice.amount}
-                      status={invoice.status}
-                    />
-                  );
-                })}
+                {filteredInvoices.map((invoice, index) => (
+                  <InvoiceCard
+                    key={index}
+                    month={invoice.month}
+                    amount={invoice.amount}
+                    status={invoice.status}
+                  />
+                ))}
+
+                {filteredInvoices.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      Nenhuma fatura encontrada para o filtro selecionado.
+                    </p>
+                  </div>
+                )}
               </div>
             </section>
           </div>

@@ -12,6 +12,7 @@ import {
   LineChart,
   Users,
   Receipt,
+  TrendingUp,
 } from "lucide-react";
 
 export const sidebarConfigs = {
@@ -20,7 +21,7 @@ export const sidebarConfigs = {
       {
         title: "Colaboradores",
         icon: Briefcase,
-        path: "/colaboradores",
+        path: "/administrador/colaboradores",
       },
       {
         title: "Estudantes",
@@ -106,6 +107,11 @@ export const sidebarConfigs = {
   aluno: {
     menuItems: [
       {
+        title: "Dashboard",
+        icon: TrendingUp, 
+        path: "/aluno/dashboard",
+      },
+      {
         title: "Minhas Aulas",
         icon: Calendar,
         path: "/aluno/minhas-aulas",
@@ -113,7 +119,7 @@ export const sidebarConfigs = {
       {
         title: "Minha Evolução",
         icon: LineChart,
-        path: "/aluno/minha-evolucao", // atualizado
+        path: "/aluno/minha-evolucao",
       },
       {
         title: "Meus Planos",
@@ -152,7 +158,7 @@ export const sidebarConfigs = {
       {
         title: "Fichas de Evolução",
         icon: FileText,
-        path: "/instrutor/fichas",
+        path: "/instrutor/Evolucao-Aluno",
       },
     ],
     userInfo: {
@@ -190,3 +196,5 @@ export const sidebarConfigs = {
     },
   },
 };
+
+export default sidebarConfigs;
