@@ -18,63 +18,33 @@ const sampleData = {
     { id: 5, data: "24/09", horario: "10:00" },
     { id: 6, data: "01/10", horario: "10:00" }
   ],
-  alunos: [
-    { 
-      id: 1, 
-      nome: "Gabriel Marques", 
-      foto: "/src/assets/gabrielEstudante.png",
-      presencas: {
-        "10/09": "ausente",
-        "03/09": "justificada"
-      }
-    },
-    { 
-      id: 2, 
-      nome: "Allana Martins", 
-      foto: "/src/assets/allanaEstudante.png",
-      presencas: {
-        "10/09": "presente"
-      }
-    },
-    { 
-      id: 3, 
-      nome: "Pedro Henrique", 
-      foto: "/src/assets/pedroEstudante.png",
-      presencas: {
-        "10/09": "presente"
-      }
-    },
-    { 
-      id: 4, 
-      nome: "João Silva", 
-      foto: "/src/assets/gabrielEstudante.png",
-      presencas: {}
-    },
-    { 
-      id: 5, 
-      nome: "Maria Santos", 
-      foto: "/src/assets/allanaEstudante.png",
-      presencas: {}
-    },
-    { 
-      id: 6, 
-      nome: "Carlos Oliveira", 
-      foto: "/src/assets/pedroEstudante.png",
-      presencas: {}
-    },
-    { 
-      id: 7, 
-      nome: "Ana Costa", 
-      foto: "/src/assets/allanaEstudante.png",
-      presencas: {}
-    },
-    { 
-      id: 8, 
-      nome: "Paula Rodrigues", 
-      foto: "/src/assets/allanaEstudante.png",
-      presencas: {}
+alunos: [
+  { 
+    id: 1, 
+    nome: "Gabriel Marques", 
+    foto: "/src/assets/gabrielEstudante.png",
+    presencas: {
+      "10/09": "ausente",
+      "03/09": "justificada"
     }
-  ]
+  },
+  { 
+    id: 2, 
+    nome: "Allana Martins", 
+    foto: "/src/assets/allanaEstudante.png",
+    presencas: {
+      "10/09": "presente"
+    }
+  },
+  { 
+    id: 3, 
+    nome: "Pedro Henrique", 
+    foto: "/src/assets/pedroEstudante.png",
+    presencas: {
+      "10/09": "presente"
+    }
+  }
+]
 };
 
 export default function RegistroPresenca() {
@@ -148,8 +118,8 @@ export default function RegistroPresenca() {
           width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%",
         }}
       >
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-20 sm:pt-6">
-          <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 max-w-7xl mx-auto">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-20 sm:pt-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
+        <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 max-w-7xl mx-auto w-full">
             
             {/* Cabeçalho */}
             <div className="text-center mb-8">

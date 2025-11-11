@@ -61,7 +61,7 @@ function AppRoutes() {
         </Route>
 
         <Route
-          path="/admin/*"
+          path="/administrador/*"
           element={
             <SidebarProvider>
               <Outlet />
