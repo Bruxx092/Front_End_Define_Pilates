@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Edit, Save, X } from "lucide-react";
@@ -73,7 +74,6 @@ export default function FichaTecnica() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-8 py-10">
-
       {/* Botões */}
       <div className="flex justify-between items-center mb-6 max-w-4xl mx-auto">
         <button
@@ -116,7 +116,6 @@ export default function FichaTecnica() {
       </h1>
 
       <div className="bg-white rounded-2xl shadow-sm p-6 max-w-4xl mx-auto border border-gray-200">
-
         {/* Foto + Dados pessoais */}
         <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
           <img
@@ -126,7 +125,6 @@ export default function FichaTecnica() {
           />
 
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-y-2 text-gray-700">
-            
             {/* Coluna 1 */}
             <div>
               <p className="text-sm text-gray-500">Nome completo</p>
@@ -180,7 +178,9 @@ export default function FichaTecnica() {
                     className="w-full border border-gray-300 rounded px-2 py-1 mb-1"
                   />
                 ) : (
-                  <p key={i} className="font-medium">{h}</p>
+                  <p key={i} className="font-medium">
+                    {h}
+                  </p>
                 )
               )}
 
@@ -234,7 +234,9 @@ export default function FichaTecnica() {
               <input
                 key={i}
                 value={f}
-                onChange={(e) => handleArrayChange("formacao", i, e.target.value)}
+                onChange={(e) =>
+                  handleArrayChange("formacao", i, e.target.value)
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mb-1"
               />
             ))

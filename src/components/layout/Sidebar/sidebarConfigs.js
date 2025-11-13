@@ -37,7 +37,7 @@ export const sidebarConfigs = {
       {
         title: "Finanças",
         icon: DollarSign,
-        path: "/administrador/financas",
+        path: "/admin/financas",
       },
       {
         title: "Alertas",
@@ -109,7 +109,7 @@ export const sidebarConfigs = {
     menuItems: [
       {
         title: "Dashboard",
-        icon: TrendingUp, 
+        icon: TrendingUp,
         path: "/aluno/dashboard",
       },
       {

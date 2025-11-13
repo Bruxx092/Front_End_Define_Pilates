@@ -14,6 +14,10 @@ import {
   DollarSign,
   LineChart,
   Receipt,
+  FileText,
+  Eye,
+  Download,
+  ArrowRight,
 } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
 import Sidebar from "@/components/layout/Sidebar/SidebarUnificada";
@@ -62,6 +66,33 @@ const DashboardEstudante = () => {
     status: "ativo",
     dueDate: "05/11/2025",
     daysUntilDue: 14,
+  };
+
+  // Fatura mais recente
+  const currentInvoice = {
+    month: "Novembro 2025",
+    amount: "R$ 390,00",
+    status: "pending", // paid, pending, overdue
+    dueDate: "05/11/2025",
+    issueDate: "01/11/2025",
+  };
+
+  const statusConfig = {
+    paid: {
+      label: "Pago",
+      className: "bg-green-100 text-green-700 border-green-200",
+      icon: "✓",
+    },
+    pending: {
+      label: "Em aberto",
+      className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      icon: "○",
+    },
+    overdue: {
+      label: "Vencido",
+      className: "bg-red-100 text-red-700 border-red-200",
+      icon: "!",
+    },
   };
 
   const schedule = [
@@ -181,7 +212,7 @@ const DashboardEstudante = () => {
                       Plano {planStatus.type}
                     </p>
                     <p className="text-base sm:text-lg font-semibold">
-                      Status: Ativo{" "}
+                      Status: Ativo
                     </p>
                     <p className="text-xs sm:text-sm opacity-90">
                       Vence em {planStatus.daysUntilDue} dias
@@ -199,6 +230,7 @@ const DashboardEstudante = () => {
               { id: "agenda", label: "Agenda", icon: Calendar },
               { id: "evolucao", label: "Evolução", icon: TrendingUp },
               { id: "planos", label: "Planos", icon: CreditCard },
+              { id: "faturas", label: "Faturas", icon: Receipt },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -420,6 +452,118 @@ const DashboardEstudante = () => {
                     <p className="text-base text-blue-800">
                       Para alterar seu plano, acesse a página Meus Planos
                       através do botão acima ou pelo menu lateral.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "faturas" && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                Fatura Atual
+              </h2>
+
+              {/* Card da Fatura Atual */}
+              <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: "#406882" }}
+                    >
+                      <FileText className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                        {currentInvoice.month}
+                      </h3>
+                      <p
+                        className="text-xl sm:text-2xl font-bold mt-1"
+                        style={{ color: "#406882" }}
+                      >
+                        {currentInvoice.amount}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={
+                      "px-3 py-2 rounded-lg text-sm font-semibold border-2 flex items-center gap-2 w-fit " +
+                      statusConfig[currentInvoice.status].className
+                    }
+                  >
+                    <span className="text-lg leading-none">
+                      {statusConfig[currentInvoice.status].icon}
+                    </span>
+                    {statusConfig[currentInvoice.status].label}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                      Emissão
+                    </p>
+                    <p className="text-base sm:text-lg font-semibold text-gray-800">
+                      {currentInvoice.issueDate}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                      Vencimento
+                    </p>
+                    <p className="text-base sm:text-lg font-semibold text-gray-800">
+                      {currentInvoice.dueDate}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <button
+                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold text-sm sm:text-base hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: "#1A5276" }}
+                  >
+                    <Eye className="h-5 w-5" />
+                    Visualizar
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-white border-2 font-semibold text-sm sm:text-base hover:bg-gray-50 transition-colors"
+                    style={{ borderColor: "#406882", color: "#406882" }}
+                  >
+                    <Download className="h-5 w-5" />
+                    Baixar
+                  </button>
+                </div>
+              </div>
+
+              {/* Botão Ver Todas as Faturas */}
+              <button
+                onClick={() => navigate("/aluno/faturas")}
+                className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl bg-white border-2 font-semibold text-lg hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-md"
+                style={{ borderColor: "#406882", color: "#406882" }}
+              >
+                <Receipt className="h-6 w-6" />
+                Ver Todas as Faturas
+                <ArrowRight className="h-5 w-5" />
+              </button>
+
+              {/* Informação adicional */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle
+                    size={24}
+                    className="text-blue-600 flex-shrink-0 mt-1"
+                  />
+                  <div>
+                    <h4 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
+                      Histórico Completo
+                    </h4>
+                    <p className="text-sm sm:text-base text-blue-800">
+                      Acesse todas as suas faturas anteriores, visualize
+                      detalhes e faça download dos documentos através da página
+                      completa de faturas.
                     </p>
                   </div>
                 </div>
