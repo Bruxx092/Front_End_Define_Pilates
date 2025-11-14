@@ -143,7 +143,7 @@ export const sidebarConfigs = {
       {
         title: "Minha Agenda",
         icon: Calendar,
-        path: "/instrutor/agenda",
+        path: "/instrutor/minhasaulas-instrutor",
       },
       {
         title: "Meus Alunos",
