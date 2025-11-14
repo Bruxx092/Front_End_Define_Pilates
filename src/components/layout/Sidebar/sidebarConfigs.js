@@ -148,7 +148,7 @@ export const sidebarConfigs = {
       {
         title: "Meus Alunos",
         icon: Users,
-        path: "/instrutor/alunos",
+        path: "/instrutor/estudantes-instrutor",
       },
       {
         title: "Registro de Faltas / Presenças",

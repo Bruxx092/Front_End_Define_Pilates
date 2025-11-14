@@ -26,6 +26,7 @@ import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
 import RegistroPresenca from "./pages/Instrutor/RegistroPresenca";
 import HistoricoPresenca from "./pages/Instrutor/HistoricoPresenca";
+import EstudantesInstrutor from "./pages/Instrutor/MeusEstudantes";
 import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
@@ -82,6 +83,7 @@ function AppRoutes() {
         >
           <Route path="historico-presenca" element={<HistoricoPresenca />} />
           <Route path="registro-presenca" element={<RegistroPresenca />} />
+          <Route path="estudantes-instrutor" element={<EstudantesInstrutor />} />
         </Route>
       </Routes>
     </Router>
