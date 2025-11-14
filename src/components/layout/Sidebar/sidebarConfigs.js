@@ -144,17 +144,17 @@ export const sidebarConfigs = {
       {
         title: "Minha Agenda",
         icon: Calendar,
-        path: "/instrutor/agenda",
+        path: "/instrutor/minhasaulas-instrutor",
       },
       {
         title: "Meus Alunos",
         icon: Users,
-        path: "/instrutor/alunos",
+        path: "/instrutor/estudantes-instrutor",
       },
       {
         title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
-        path: "/instrutor/registro",
+        path: "/instrutor/registro-presenca",
       },
       {
         title: "Fichas de Evolução",
