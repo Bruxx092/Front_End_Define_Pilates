@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   BrowserRouter as Router,
   Routes,
@@ -28,11 +29,17 @@ import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
 import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
 import FichaTecnica from "./pages/Admin/FichaTecnica";
+import Alertas from "./pages/Admin/Alertas";
+import Financas from "./pages/Admin/Financas"; // Import the Financas component
 
 import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
 import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
 import AulasAluno from "./pages/Instrutor/AulasAluno";
-import FotosAluno from "./pages/Instrutor/FotosAluno"; 
+import FotosAluno from "./pages/Instrutor/FotosAluno";
+import RegistroPresenca from "./pages/Instrutor/RegistroPresenca";
+import HistoricoPresenca from "./pages/Instrutor/HistoricoPresenca";
+import EstudantesInstrutor from "./pages/Instrutor/MeusEstudantes";
+import MinhasAulasInstrutor from "./pages/Instrutor/MinhasAulasInstrutor";
 
 import { SidebarProvider } from "./context/SidebarContext";
 
@@ -79,20 +86,14 @@ function AppRoutes() {
           }
         >
           <Route path="evolucao-aluno" element={<EvolucaoAluno />} />
-        
-          <Route 
-            path="aluno/:alunoId/atestados" 
-            element={<AtestadoAluno />} 
-          />
-          <Route 
-            path="aluno/:alunoId/aulas" 
-            element={<AulasAluno />} 
-          />
-          <Route 
-            path="aluno/:alunoId/fotos" 
-            element={<FotosAluno />} 
-          />
-          
+
+          <Route path="aluno/:alunoId/atestados" element={<AtestadoAluno />} />
+          <Route path="aluno/:alunoId/aulas" element={<AulasAluno />} />
+          <Route path="aluno/:alunoId/fotos" element={<FotosAluno />} />
+          <Route path="historico-presenca" element={<HistoricoPresenca />} />
+          <Route path="registro-presenca" element={<RegistroPresenca />} />
+          <Route path="estudantes-instrutor" element={<EstudantesInstrutor />} />
+          <Route path="minhasaulas-instrutor" element={<MinhasAulasInstrutor />} />
         </Route>
 
         {/* ROTAS ADMIN*/}
@@ -108,6 +109,8 @@ function AppRoutes() {
           <Route path="agenda-estudio" element={<AgendaEstudio />} />
           <Route path="colaboradores" element={<ColaboradoresPage />} />
           <Route path="colaboradores/:id" element={<FichaTecnica />} />
+          <Route path="alertas" element={<Alertas />} />
+          <Route path="financas" element={<Financas />} />{" "}
         </Route>
       </Routes>
     </Router>

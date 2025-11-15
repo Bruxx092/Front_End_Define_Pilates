@@ -13,6 +13,7 @@ import {
   Users,
   Receipt,
   TrendingUp,
+  Bell,
 } from "lucide-react";
 
 export const sidebarConfigs = {
@@ -21,12 +22,12 @@ export const sidebarConfigs = {
       {
         title: "Colaboradores",
         icon: Briefcase,
-        path: "/administrador/colaboradores",
+        path: "/admin/colaboradores",
       },
       {
         title: "Estudantes",
         icon: GraduationCap,
-        path: "/administrador/estudantes",
+        path: "/admin/estudantes",
       },
       {
         title: "Agenda dos Estúdios",
@@ -34,14 +35,14 @@ export const sidebarConfigs = {
         path: "/admin/agenda-estudio",
       },
       {
-        title: "Painel Geral dos Alunos",
-        icon: LayoutDashboard,
-        path: "/administrador/painel-alunos",
-      },
-      {
         title: "Finanças",
         icon: DollarSign,
-        path: "/administrador/financas",
+        path: "/admin/financas",
+      },
+      {
+        title: "Alertas",
+        icon: Bell,
+        path: "/admin/alertas",
       },
     ],
     userInfo: {
@@ -108,7 +109,7 @@ export const sidebarConfigs = {
     menuItems: [
       {
         title: "Dashboard",
-        icon: TrendingUp, 
+        icon: TrendingUp,
         path: "/aluno/dashboard",
       },
       {
@@ -143,17 +144,17 @@ export const sidebarConfigs = {
       {
         title: "Minha Agenda",
         icon: Calendar,
-        path: "/instrutor/agenda",
+        path: "/instrutor/minhasaulas-instrutor",
       },
       {
         title: "Meus Alunos",
         icon: Users,
-        path: "/instrutor/alunos",
+        path: "/instrutor/estudantes-instrutor",
       },
       {
         title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
-        path: "/instrutor/registro",
+        path: "/instrutor/registro-presenca",
       },
       {
         title: "Fichas de Evolução",
