@@ -1,25 +1,55 @@
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // --- MODIFICADO --- (Adicionado useEffect)
 import { useSidebar } from "@/context/SidebarContext";
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Building } from 'lucide-react';
+import api from '../../services/api';
 
-const sampleClasses = [
-    // Aulas em Setembro 2025
-    { id: 1, title: 'Pilates para Iniciante', date: '2025-09-02', teacher: 'Prof. Ana Souza', studio: 'Estudio Itaquera' },
-    { id: 2, title: 'Fisioterapia', date: '2025-09-03', teacher: 'Prof. Carlos Silva', studio: 'Estudio São Miguel' },
-    { id: 3, title: 'Pilates Funcional', date: '2025-09-04', teacher: 'Prof. Mariana Costa', studio: 'Estudio Itaquera' },
-    
-    // Aulas em Outubro 2025
-    { id: 4, title: 'Pilates Intermediário', date: '2025-10-05', teacher: 'Prof. Ana Souza', studio: 'Estudio Itaquera' },
-    { id: 5, title: 'Yoga para Iniciantes', date: '2025-10-06', teacher: 'Prof. João Medeiros', studio: 'Estudio Sção Miguel' },
-    
-    // Aulas em Setembro 2024 (outro ano)
-    { id: 6, title: 'Pilates Avançado', date: '2024-09-07', teacher: 'Prof. Ricardo Lima', studio: 'Estudio Itaquera' },
-    { id: 7, title: 'Yoga para Iniciantes', date: '2024-09-08', teacher: 'Prof. Carla Santos', studio: 'Estudio São Miguel' },
-    { id: 8, title: 'Pilates Funcional', date: '2025-09-09', teacher: 'Prof. Ana Souza', studio: 'Estudio Itaquera' },
+const STUDIO_MAP = {
+    1: 'Estudio Itaquera',
+    2: 'Estudio São Miguel',
+    // Adicione outro se tiver
+};
+
+// Aqui vai o mapeamento dos IDs dos professores para nomes
+const TEACHER_MAP = {
+    "1": 'Prof. Ana Souza', // Exemplo de dado mockado
+    "2": 'Prof. Carlos Silva',
+    "3": 'Prof. Mariana Costa',
+    // ...
+};
+
+const studios = [
+    { id: 'Todos', name: 'Todos' },
+    { id: 1, name: 'Estudio Itaquera' },
+    { id: 2, name: 'Estudio São Miguel' }
 ];
 
+const StudioSelector = ({ studios, selectedStudio, onSelectStudio }) => {
+    return (
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+            <div className="flex items-center text-gray-700 font-semibold">
+                <Building size={20} className="mr-2" />
+                <span className="mr-3">Estúdio:</span>
+            </div>
+            {studios.map((studio) => (
+                <button
+                    key={studio.id}
+                    onClick={() => onSelectStudio(studio.id)} 
+                    className={`
+                        py-2 px-5 rounded-full font-medium text-sm transition-all
+                        ${selectedStudio === studio.id 
+                            ? 'bg-[#67AF97] text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }
+                    `}
+                >
+                    {studio.name}
+                </button>
+            ))}
+        </div>
+    );
+};
 
 const MonthYearSelector = ({ 
     month, 
@@ -49,7 +79,6 @@ const MonthYearSelector = ({
                     onChange={onYearChange}
                     className="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-8 text-lg font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97]"
                 >
-                    
                     {Array.from({ length: 3 }, (_, i) => 2023 + i).map((y) => (
                         <option key={y} value={y}>{y}</option>
                     ))}
@@ -62,10 +91,13 @@ const MonthYearSelector = ({
 
 const ClassCard = ({ title, date, teacher, studio }) => {
     
-    // Helper para formatar a data de YYYY-MM-DD para DD/MM/YYYY
+
     const formatDate = (dateString) => {
         if (!dateString) return "";
-        const [year, month, day] = dateString.split('-');
+        const dateObj = new Date(dateString);
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
         return `${day}/${month}/${year}`;
     };
 
@@ -76,7 +108,6 @@ const ClassCard = ({ title, date, teacher, studio }) => {
                     {title}
                 </h3>
                 <p className="font-medium text-lg sm:text-xl text-[#67AF97] mb-1">
-                    
                     Data: {formatDate(date)}
                 </p>
                 <p className="font-medium text-black text-base sm:text-lg line-clamp-1">
@@ -90,13 +121,49 @@ const ClassCard = ({ title, date, teacher, studio }) => {
     );
 };
 
-// Componente principal da página
-export default function AgendaEstudio({ classes = sampleClasses }) {
+
+export default function AgendaEstudio() { 
     const [menuOpen, setMenuOpen] = useState(false);
     const { isMobile, sidebarWidth } = useSidebar();
+
+    const [allClasses, setAllClasses] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    
+    const [selectedStudio, setSelectedStudio] = useState('Todos');
     const [currentMonth, setCurrentMonth] = useState(8);
     const [currentYear, setCurrentYear] = useState(2025);
 
+
+    useEffect(() => {
+        const fetchClasses = async () => {
+            setIsLoading(true);
+
+
+            const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+            const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${lastDay}`;
+            
+            try {
+                const response = await api.get('/agenda/cronograma', {
+                    params: {
+                        start_date: startDate,
+                        end_date: endDate
+                    }
+                });
+                
+                setAllClasses(response.data || []);
+            } catch (error) {
+                console.error("Erro ao buscar agenda:", error);
+                setAllClasses([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchClasses();
+    }, [currentMonth, currentYear]);
+
+    
     const handleMonthChange = (e) => {
         setCurrentMonth(parseInt(e.target.value)); 
     };
@@ -105,19 +172,27 @@ export default function AgendaEstudio({ classes = sampleClasses }) {
         setCurrentYear(parseInt(e.target.value));
     };
 
+    const handleStudioChange = (studioId) => {
+        setSelectedStudio(studioId);
+    };
 
-    const filteredClasses = classes.filter(classe => {
-        if (!classe.date) return false;
-        const classDate = new Date(classe.date + 'T00:00:00');
-        const classMonth = classDate.getMonth(); // 0-11
-        const classYear = classDate.getFullYear();
-        
-        return classMonth === currentMonth && classYear === currentYear;
-    });
+    const filteredAndMappedClasses = allClasses
+        .filter(aula => {
+            if (selectedStudio === 'Todos') return true;
+            return aula.EstudioID == selectedStudio;
+        })
+        .map(aula => {
+            return {
+                id: aula.AulaID || aula._id,
+                title: aula.disciplina,
+                date: aula.dataAgendaAula,
+                teacher: TEACHER_MAP[aula.professorResponsavel] || `(ID: ${aula.professorResponsavel})`,
+                studio: STUDIO_MAP[aula.EstudioID] || "Estúdio Desconhecido"
+            };
+        });
 
     return (
         <div className="flex min-h-screen bg-gray-50 font-inter">
-            {/* Componente da Sidebar */}
             <SidebarUnificada
                 menuItems={sidebarConfigs.administrador.menuItems}
                 userInfo={sidebarConfigs.administrador.userInfo}
@@ -135,14 +210,18 @@ export default function AgendaEstudio({ classes = sampleClasses }) {
                 <main className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8">
                     <div className="bg-white rounded-lg shadow-lg flex flex-col p-4 sm:p-6 lg:p-8 w-full max-w-full lg:max-w-7xl mx-auto">
 
-                        {/* Cabeçalho */}
                         <div className="mb-6 text-center">
                             <h2 className="font-semibold text-gray-900 text-2xl sm:text-3xl lg:text-4xl">
-                                Calendário de Aulas
+                                Agenda de Aulas
                             </h2>
                         </div>
 
-                        {/* Seletores de Mês/Ano */}
+                        <StudioSelector 
+                            studios={studios}
+                            selectedStudio={selectedStudio}
+                            onSelectStudio={handleStudioChange}
+                        />
+
                         <div className="mb-8">
                             <MonthYearSelector 
                                 month={currentMonth} 
@@ -151,28 +230,29 @@ export default function AgendaEstudio({ classes = sampleClasses }) {
                                 onYearChange={handleYearChange}
                             />
                         </div>
-
-                        {/* Grid de Aulas Responsivo */}
++
                         <div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                                {filteredClasses.length > 0 ? (
-                                    // Mapeia as AULAS FILTRADAS
-                                    filteredClasses.map((c) => (
-                                        <ClassCard
-                                            key={c.id}
-                                            title={c.title}
-                                            date={c.date}
-                                            teacher={c.teacher}
-                                            studio={c.studio}
-                                        />
-                                    ))
-                                ) : (
-                                    // Mensagem para quando não há aulas
-                                    <p className="col-span-full text-center text-gray-500 text-lg">
-                                        Nenhuma aula encontrada para este mês e ano.
-                                    </p>
-                                )}
-                            </div>
+                            {isLoading ? (
+                                <p className="col-span-full text-center text-gray-500 text-lg">Carregando aulas...</p>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                                    {filteredAndMappedClasses.length > 0 ? (
+                                        filteredAndMappedClasses.map((c) => (
+                                            <ClassCard
+                                                key={c.id}
+                                                title={c.title}
+                                                date={c.date}
+                                                teacher={c.teacher}
+                                                studio={c.studio}
+                                            />
+                                        ))
+                                    ) : (
+                                        <p className="col-span-full text-center text-gray-500 text-lg">
+                                            Nenhuma aula encontrada para esta seleção.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                     </div>
