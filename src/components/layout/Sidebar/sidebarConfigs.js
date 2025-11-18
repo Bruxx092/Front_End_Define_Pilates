@@ -20,6 +20,11 @@ export const sidebarConfigs = {
   administrador: {
     menuItems: [
       {
+        title: "Dashboard",
+        icon: LayoutDashboard,
+        path: "/admin/dashboard",
+      },
+      {
         title: "Colaboradores",
         icon: Briefcase,
         path: "/admin/colaboradores",
@@ -53,6 +58,11 @@ export const sidebarConfigs = {
 
   admmaster: {
     menuItems: [
+      {
+        title: "Dashboard",
+        icon: LayoutDashboard,
+        path: "/admmaster/dashboard",
+      },
       {
         title: "Colaboradores",
         icon: Briefcase,

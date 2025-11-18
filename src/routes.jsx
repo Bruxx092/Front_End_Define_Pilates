@@ -25,12 +25,13 @@ import HistoricoAulasPage from "./pages/Aluno/MinhaEvolucao/HistoricoAulas";
 import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
 import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
 
+import DashboardAdmin from "./pages/Admin/DashboardAdmin";
 import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
 import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
 import FichaTecnica from "./pages/Admin/FichaTecnica";
 import Alertas from "./pages/Admin/Alertas";
-import Financas from "./pages/Admin/Financas"; // Import the Financas component
+import Financas from "./pages/Admin/Financas";
 
 import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
 import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
@@ -92,8 +93,14 @@ function AppRoutes() {
           <Route path="aluno/:alunoId/fotos" element={<FotosAluno />} />
           <Route path="historico-presenca" element={<HistoricoPresenca />} />
           <Route path="registro-presenca" element={<RegistroPresenca />} />
-          <Route path="estudantes-instrutor" element={<EstudantesInstrutor />} />
-          <Route path="minhasaulas-instrutor" element={<MinhasAulasInstrutor />} />
+          <Route
+            path="estudantes-instrutor"
+            element={<EstudantesInstrutor />}
+          />
+          <Route
+            path="minhasaulas-instrutor"
+            element={<MinhasAulasInstrutor />}
+          />
         </Route>
 
         {/* ROTAS ADMIN*/}
@@ -105,12 +112,13 @@ function AppRoutes() {
             </SidebarProvider>
           }
         >
+          <Route path="dashboard" element={<DashboardAdmin />} />
           <Route path="estudantes" element={<Estudantes />} />
           <Route path="agenda-estudio" element={<AgendaEstudio />} />
           <Route path="colaboradores" element={<ColaboradoresPage />} />
           <Route path="colaboradores/:id" element={<FichaTecnica />} />
           <Route path="alertas" element={<Alertas />} />
-          <Route path="financas" element={<Financas />} />{" "}
+          <Route path="financas" element={<Financas />} />
         </Route>
       </Routes>
     </Router>
