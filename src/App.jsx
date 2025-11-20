@@ -1,10 +1,12 @@
-import React from "react";
 import AppRoutes from "./routes";
+import { SidebarProvider } from "@/context/SidebarContext";
 
 function App() {
   return (
     <div className="App">
-      <AppRoutes />
+      <SidebarProvider>
+        <AppRoutes />
+      </SidebarProvider>
     </div>
   );
 }

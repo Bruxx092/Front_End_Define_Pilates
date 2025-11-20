@@ -1,10 +1,12 @@
-import React from "react";
+// @ts-nocheck
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
+
 import SignIn from "./pages/Auth/SignIn/SignIn";
 import Login from "./pages/Auth/Login/Login";
 import ColaboratorSignIn from "./pages/Auth/SignIn/ColaboratorSignIn";
@@ -12,8 +14,37 @@ import InstructorSignIn from "./pages/Auth/SignIn/InstructorSignIn";
 import StudentSignIn from "./pages/Auth/SignIn/StudentSignIn";
 import LoginForm from "./pages/Auth/Login/LoginForm";
 import ForgotPassword from "./pages/Auth/ForgotPassword/ForgotPassword";
-import Code from "./pages/Auth/ForgotPassword/Code";
 import NewPassword from "./pages/Auth/ForgotPassword/NewPassword";
+
+import Meus_Planos from "./pages/Aluno/Meus_Planos";
+import Faturas from "./pages/Aluno/Faturas";
+import MinhasAulas from "./pages/Aluno/MinhasAulas";
+import MinhaEvolucao from "./pages/Aluno/MinhaEvolucao/minhaevolucao";
+import HistoricoAtestados from "./pages/Aluno/MinhaEvolucao/HistoricoAtestados";
+import HistoricoAulasPage from "./pages/Aluno/MinhaEvolucao/HistoricoAulas";
+import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
+import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
+
+import DashboardAdmin from "./pages/Admin/DashboardAdmin";
+// --- IMPORTAÇÃO NOVA ---
+import DashboardRecepcionista from "./pages/Admin/DashboardRecepcionista"; 
+import Estudantes from "./pages/Admin/Estudantes";
+import AgendaEstudio from "./pages/Admin/AgendaEstudio";
+import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
+import FichaTecnica from "./pages/Admin/FichaTecnica";
+import Alertas from "./pages/Admin/Alertas";
+import Financas from "./pages/Admin/Financas";
+
+import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
+import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
+import AulasAluno from "./pages/Instrutor/AulasAluno";
+import FotosAluno from "./pages/Instrutor/FotosAluno";
+import RegistroPresenca from "./pages/Instrutor/RegistroPresenca";
+import HistoricoPresenca from "./pages/Instrutor/HistoricoPresenca";
+import EstudantesInstrutor from "./pages/Instrutor/MeusEstudantes";
+import MinhasAulasInstrutor from "./pages/Instrutor/MinhasAulasInstrutor";
+
+import { SidebarProvider } from "./context/SidebarContext";
 
 function AppRoutes() {
   return (
@@ -23,12 +54,77 @@ function AppRoutes() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/login" element={<Login />} />
         <Route path="/colaborator-signin" element={<ColaboratorSignIn />} />
-        <Route path="/instructor-signin" element={<InstructorSignIn/>} />
-        <Route path="/student-signin" element={<StudentSignIn/>} />
-        <Route path="/login-form" element={<LoginForm/>} />
-        <Route path="/forgot-password" element={<ForgotPassword/>} />
-        <Route path="/code" element={<Code/>} />
-        <Route path="/new-password" element={<NewPassword/>} />
+        <Route path="/instructor-signin" element={<InstructorSignIn />} />
+        <Route path="/student-signin" element={<StudentSignIn />} />
+        <Route path="/login-form" element={<LoginForm />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/new-password" element={<NewPassword />} />
+
+        {/* ROTAS DO ALUNO*/}
+        <Route
+          path="/aluno/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="planos" element={<Meus_Planos />} />
+          <Route path="faturas" element={<Faturas />} />
+          <Route path="minha-evolucao" element={<MinhaEvolucao />} />
+          <Route path="historico-atestados" element={<HistoricoAtestados />} />
+          <Route path="historico-aulas" element={<HistoricoAulasPage />} />
+          <Route path="fotos" element={<FotosPage />} />
+          <Route path="minhas-aulas" element={<MinhasAulas />} />
+          <Route path="dashboard" element={<DashboardEstudante />} />
+        </Route>
+
+        {/* ROTAS DO INSTRUTOR*/}
+        <Route
+          path="/instrutor/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="evolucao-aluno" element={<EvolucaoAluno />} />
+
+          <Route path="aluno/:alunoId/atestados" element={<AtestadoAluno />} />
+          <Route path="aluno/:alunoId/aulas" element={<AulasAluno />} />
+          <Route path="aluno/:alunoId/fotos" element={<FotosAluno />} />
+          <Route path="historico-presenca" element={<HistoricoPresenca />} />
+          <Route path="registro-presenca" element={<RegistroPresenca />} />
+          <Route
+            path="estudantes-instrutor"
+            element={<EstudantesInstrutor />}
+          />
+          <Route
+            path="minhasaulas-instrutor"
+            element={<MinhasAulasInstrutor />}
+          />
+        </Route>
+
+        {/* ROTAS ADMIN*/}
+        <Route
+          path="/admin/*"
+          element={
+            <SidebarProvider>
+              <Outlet />
+            </SidebarProvider>
+          }
+        >
+          <Route path="dashboard" element={<DashboardAdmin />} />
+          {/* --- ROTA NOVA --- */}
+          <Route path="dashboard-recepcionista" element={<DashboardRecepcionista />} />
+          
+          <Route path="estudantes" element={<Estudantes />} />
+          <Route path="agenda-estudio" element={<AgendaEstudio />} />
+          <Route path="colaboradores" element={<ColaboradoresPage />} />
+          <Route path="colaboradores/:id" element={<FichaTecnica />} />
+          <Route path="alertas" element={<Alertas />} />
+          <Route path="financas" element={<Financas />} />
+        </Route>
       </Routes>
     </Router>
   );

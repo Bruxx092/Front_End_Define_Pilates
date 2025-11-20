@@ -1,50 +1,71 @@
 import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg';
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import api from '../../../services/api'; 
 
 const ForgotPassword = () => {
-    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState(null); 
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Lógica de envio do email para o backend
-        // Se o envio for bem-sucedido:
-        navigate('/code');
+        setIsLoading(true);
+        setMessage(null);
+
+        try {
+            await api.post('/auth/reset-password', {
+                email: email 
+            });
+            
+            setMessage({ type: 'success', text: 'Se este email estiver cadastrado, um link de recuperação foi enviado.' });
+
+        } catch (error) {
+            setMessage({ type: 'success', text: 'Se este email estiver cadastrado, um link de recuperação foi enviado.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const renderMessage = () => {
+        if (!message) return null;
+        const messageClasses = message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-600 text-white';
+        return (
+            <div className={`w-full p-3 mb-4 rounded-md text-center ${messageClasses}`}>
+                {message.text}
+            </div>
+        );
     };
 
     return (
-        // -> Adiciona padding para evitar que o conteúdo toque nas bordas
-        <div className='flex flex-col items-center justify-center min-h-screen bg-shadow-green-200 p-4'>
-            {/* -> Classes de largura e padding responsivas */}
+        <div className='flex flex-col items-center justify-center min-h-screen bg-bismark-800 p-4'>
             <div className="flex flex-col items-center p-6 sm:p-8 bg-white rounded-lg shadow-md w-full max-w-md">
 
-                {/* -> Ajusta o tamanho da logo e adiciona margem inferior */}
                 <img src={Logo_Sem_Contorno} alt="Logo da Empresa" className="w-40 mb-4" />
-
-                {/* -> Ajusta o tamanho da fonte para telas pequenas */}
                 <h2 className="text-lg sm:text-xl font-bold mb-6 text-gray-800 text-center">ESQUECI A SENHA</h2>
+                
+                {renderMessage()}
 
-                {/* -> Adiciona w-full para garantir que o formulário ocupe o espaço do card */}
                 <form onSubmit={handleSubmit} className="w-full">
-
-                    {/* -> Adiciona margem inferior para espaçamento (substituindo o <br />) */}
                     <div className="flex items-center w-full p-3 mb-6 border border-gray-300 rounded-md">
-                        {/* Removido o div vazio, pois não era necessário */}
                         <input 
                             type="email"
                             placeholder="Digite o Email Cadastrado"
                             className="flex-grow outline-none border-none bg-transparent text-gray-700 text-center"
-                            required // Boa prática adicionar validação básica
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            disabled={isLoading}
                         />
                     </div>
-
-                    {/* -> Aumenta o padding vertical para um melhor alvo de toque */}
-                    <button type="submit" className="w-full py-3 bg-shadow-green-500 text-white font-bold rounded-md hover:bg-shadow-green-600 transition-colors duration-300">
-                        ENVIAR
+                    <button 
+                        type="submit" 
+                        className="w-full py-3 bg-blumine-900 text-white font-bold rounded-md hover:bg-blumine-950 transition-colors duration-300 disabled:opacity-75"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'ENVIANDO...' : 'ENVIAR'}
                     </button>
-
                 </form>
-
             </div>
         </div>
     );
