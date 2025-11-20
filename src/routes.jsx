@@ -26,6 +26,8 @@ import FotosPage from "./pages/Aluno/MinhaEvolucao/Fotos";
 import DashboardEstudante from "./pages/Aluno/DashboardEstudante";
 
 import DashboardAdmin from "./pages/Admin/DashboardAdmin";
+// --- IMPORTAÇÃO NOVA ---
+import DashboardRecepcionista from "./pages/Admin/DashboardRecepcionista"; 
 import Estudantes from "./pages/Admin/Estudantes";
 import AgendaEstudio from "./pages/Admin/AgendaEstudio";
 import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
@@ -113,6 +115,9 @@ function AppRoutes() {
           }
         >
           <Route path="dashboard" element={<DashboardAdmin />} />
+          {/* --- ROTA NOVA --- */}
+          <Route path="dashboard-recepcionista" element={<DashboardRecepcionista />} />
+          
           <Route path="estudantes" element={<Estudantes />} />
           <Route path="agenda-estudio" element={<AgendaEstudio />} />
           <Route path="colaboradores" element={<ColaboradoresPage />} />
