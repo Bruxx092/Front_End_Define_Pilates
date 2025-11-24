@@ -1,10 +1,10 @@
 // @ts-nocheck
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
-import { FileText, Download, Eye, Filter } from "lucide-react";
+import { FileText, Download, Eye, Filter, Loader } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
+import { faturasService } from "@/services/faturasService";
 
 const statusConfig = {
   paid: {
@@ -35,8 +36,18 @@ const statusConfig = {
 };
 
 function InvoiceCard(props) {
-  const { month, amount, status } = props;
-  const config = statusConfig[status];
+  const { invoice, onDownload, onView } = props;
+  const config = statusConfig[invoice.status] || statusConfig.pending;
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await onDownload(invoice.id);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <Card className="p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300">
@@ -45,10 +56,13 @@ function InvoiceCard(props) {
           <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
           <div>
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-              {month}
+              {invoice.month || `Fatura ${invoice.issueDate}`}
             </h3>
             <p className="text-lg sm:text-xl font-bold text-blue-600 mt-1">
-              {amount}
+              R${" "}
+              {parseFloat(invoice.amount || 0).toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+              })}
             </p>
           </div>
         </div>
@@ -81,13 +95,13 @@ function InvoiceCard(props) {
           >
             <DialogHeader>
               <DialogTitle className="text-lg sm:text-xl">
-                Fatura de {month}
+                Fatura de {invoice.month || invoice.issueDate}
               </DialogTitle>
             </DialogHeader>
             <div className="flex-1 w-full h-full">
               <div className="w-full h-full rounded-lg bg-gray-100 flex items-center justify-center">
                 <p className="text-gray-500 text-sm sm:text-base">
-                  Visualização da fatura de {month}
+                  Carregando visualização da fatura...
                 </p>
               </div>
             </div>
@@ -98,9 +112,20 @@ function InvoiceCard(props) {
           variant="outline"
           className="flex-1 text-sm sm:text-base font-medium"
           size="lg"
+          onClick={handleDownload}
+          disabled={downloading}
         >
-          <Download className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-          Baixar
+          {downloading ? (
+            <>
+              <Loader className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+              Baixando...
+            </>
+          ) : (
+            <>
+              <Download className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              Baixar
+            </>
+          )}
         </ButtonPlanos>
       </div>
     </Card>
@@ -110,16 +135,10 @@ function InvoiceCard(props) {
 const Faturas = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isMobile, sidebarWidth } = useSidebar();
-  const [activeFilter, setActiveFilter] = useState("all"); // Add this state
-
-  const invoices = [
-    { month: "Outubro 2025", amount: "R$ 390,00", status: "paid" },
-    { month: "Setembro 2025", amount: "R$ 390,00", status: "paid" },
-    { month: "Agosto 2025", amount: "R$ 390,00", status: "pending" },
-    { month: "Julho 2025", amount: "R$ 390,00", status: "paid" },
-    { month: "Junho 2025", amount: "R$ 390,00", status: "paid" },
-    { month: "Maio 2025", amount: "R$ 390,00", status: "overdue" },
-  ];
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const filters = [
     { id: "all", label: "Todas" },
@@ -128,9 +147,55 @@ const Faturas = () => {
     { id: "overdue", label: "Vencidas" },
   ];
 
-  const filteredInvoices = invoices.filter(
-    (invoice) => activeFilter === "all" || invoice.status === activeFilter
-  );
+  useEffect(() => {
+    loadFaturas();
+  }, [activeFilter]);
+
+  const loadFaturas = async () => {
+    setLoading(true);
+    try {
+      const status = activeFilter === "all" ? null : activeFilter;
+      const data = await faturasService.getFaturas(1, 100, status);
+      setInvoices(data.faturas || []);
+      setError(null);
+    } catch (err) {
+      console.error("Erro ao carregar faturas:", err);
+      setError("Erro ao carregar faturas. Tente novamente mais tarde.");
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async (faturaId) => {
+    try {
+      const blob = await faturasService.downloadFatura(faturaId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fatura_${faturaId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao baixar fatura:", err);
+      alert("Erro ao baixar fatura. Tente novamente.");
+    }
+  };
+
+  const handleView = async (faturaId) => {
+    try {
+      const data = await faturasService.viewFatura(faturaId);
+      // Abrir em nova aba ou exibir na modal
+      if (data.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err) {
+      console.error("Erro ao visualizar fatura:", err);
+      alert("Erro ao visualizar fatura. Tente novamente.");
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -179,16 +244,24 @@ const Faturas = () => {
               </div>
 
               <div className="space-y-3">
-                {filteredInvoices.map((invoice, index) => (
-                  <InvoiceCard
-                    key={index}
-                    month={invoice.month}
-                    amount={invoice.amount}
-                    status={invoice.status}
-                  />
-                ))}
-
-                {filteredInvoices.length === 0 && (
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <p className="text-red-700">{error}</p>
+                  </div>
+                ) : invoices.length > 0 ? (
+                  invoices.map((invoice) => (
+                    <InvoiceCard
+                      key={invoice.id}
+                      invoice={invoice}
+                      onDownload={handleDownload}
+                      onView={handleView}
+                    />
+                  ))
+                ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500">
                       Nenhuma fatura encontrada para o filtro selecionado.
