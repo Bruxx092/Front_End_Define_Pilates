@@ -1,244 +1,211 @@
 // @ts-nocheck
-
 import {
-  LayoutDashboard,
-  Users,
   Briefcase,
+  GraduationCap,
   Calendar,
+  LayoutDashboard,
   DollarSign,
-  BarChart3,
-  Settings,
-  Bell,
-  FileText,
-  TrendingUp,
+  CreditCard,
+  Phone,
   CheckSquare,
-  Image,
-  LogOut,
+  FileText,
+  LineChart,
+  Users,
+  Receipt,
+  TrendingUp,
+  Bell,
 } from "lucide-react";
-
-const getCurrentUserInfo = () => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  return {
-    name: user.name || "Usuário",
-    email: user.email || "usuario@example.com",
-    role: user.role || "aluno",
-    id: user.id || null,
-  };
-};
 
 export const sidebarConfigs = {
   administrador: {
-    userInfo: getCurrentUserInfo(),
     menuItems: [
       {
         title: "Dashboard",
         icon: LayoutDashboard,
         path: "/admin/dashboard",
-        subItems: null,
-      },
-      {
-        title: "Estudantes",
-        icon: Users,
-        path: "/admin/estudantes",
-        subItems: null,
       },
       {
         title: "Colaboradores",
         icon: Briefcase,
         path: "/admin/colaboradores",
-        subItems: null,
       },
       {
-        title: "Agenda de Estúdios",
+        title: "Estudantes",
+        icon: GraduationCap,
+        path: "/admin/estudantes",
+      },
+      {
+        title: "Agenda dos Estúdios",
         icon: Calendar,
-        path: "/admin/agenda",
-        subItems: null,
+        path: "/admin/agenda-estudio",
       },
       {
-        title: "Financeiro",
+        title: "Finanças",
         icon: DollarSign,
         path: "/admin/financas",
-        subItems: null,
-      },
-      {
-        title: "Relatórios",
-        icon: BarChart3,
-        path: "/admin/relatorios",
-        subItems: null,
       },
       {
         title: "Alertas",
         icon: Bell,
         path: "/admin/alertas",
-        subItems: null,
-      },
-      {
-        title: "Configurações",
-        icon: Settings,
-        path: "/admin/configuracoes",
-        subItems: null,
       },
     ],
+    userInfo: {
+      name: "Administrador",
+      email: "administrador@email.com",
+    },
   },
 
-  recepcionista: {
-    userInfo: getCurrentUserInfo(),
+  admmaster: {
     menuItems: [
       {
         title: "Dashboard",
         icon: LayoutDashboard,
-        path: "/recepcionista/dashboard",
-        subItems: null,
+        path: "/admmaster/dashboard",
       },
       {
-        title: "Agendamentos",
-        icon: Calendar,
-        path: "/recepcionista/agendamentos",
-        subItems: null,
+        title: "Colaboradores",
+        icon: Briefcase,
+        path: "/admmaster/colaboradores",
       },
       {
         title: "Estudantes",
-        icon: Users,
-        path: "/recepcionista/estudantes",
-        subItems: null,
+        icon: GraduationCap,
+        path: "/admmaster/estudantes",
       },
       {
-        title: "Faturas",
-        icon: FileText,
-        path: "/recepcionista/faturas",
-        subItems: null,
-      },
-      {
-        title: "Alertas",
-        icon: Bell,
-        path: "/recepcionista/alertas",
-        subItems: null,
-      },
-    ],
-  },
-
-  instrutor: {
-    userInfo: getCurrentUserInfo(),
-    menuItems: [
-      {
-        title: "Dashboard",
-        icon: LayoutDashboard,
-        path: "/instrutor/dashboard",
-        subItems: null,
-      },
-      {
-        title: "Minhas Aulas",
+        title: "Agenda dos Estúdios",
         icon: Calendar,
-        path: "/instrutor/aulas",
-        subItems: null,
+        path: "/admmaster/agenda",
       },
       {
-        title: "Meus Estudantes",
-        icon: Users,
-        path: "/instrutor/estudantes",
-        subItems: null,
+        title: "Painel Geral dos Alunos",
+        icon: LayoutDashboard,
+        path: "/admmaster/painel-alunos",
       },
       {
-        title: "Presença",
+        title: "Finanças",
+        icon: DollarSign,
+        path: "/admmaster/financas",
+      },
+      {
+        title: "Planos & Pagamentos",
+        icon: CreditCard,
+        path: "/admmaster/planos-pagamentos",
+      },
+      {
+        title: "Contatos / Reagendamentos",
+        icon: Phone,
+        path: "/admmaster/contatos-reagendamentos",
+      },
+      {
+        title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
-        path: "/instrutor/presenca",
-        subItems: null,
+        path: "/admmaster/registro-faltas",
       },
       {
-        title: "Ficha Técnica",
+        title: "Fichas de Evolução",
         icon: FileText,
-        path: "/instrutor/ficha-tecnica",
-        subItems: null,
-      },
-      {
-        title: "Evolução",
-        icon: TrendingUp,
-        path: "/instrutor/evolucao",
-        subItems: null,
+        path: "/admmaster/fichas-evolucao",
       },
     ],
+    userInfo: {
+      name: "Administrador Master",
+      email: "admmaster@email.com",
+    },
   },
 
   aluno: {
-    userInfo: getCurrentUserInfo(),
     menuItems: [
       {
         title: "Dashboard",
-        icon: LayoutDashboard,
+        icon: TrendingUp,
         path: "/aluno/dashboard",
-        subItems: null,
       },
       {
         title: "Minhas Aulas",
         icon: Calendar,
         path: "/aluno/minhas-aulas",
-        subItems: null,
       },
       {
         title: "Minha Evolução",
-        icon: TrendingUp,
+        icon: LineChart,
         path: "/aluno/minha-evolucao",
-        subItems: [
-          {
-            title: "Histórico de Aulas",
-            path: "/aluno/minha-evolucao/historico-aulas",
-          },
-          {
-            title: "Fotos",
-            path: "/aluno/minha-evolucao/fotos",
-          },
-          {
-            title: "Atestados",
-            path: "/aluno/minha-evolucao/atestados",
-          },
-        ],
       },
       {
         title: "Meus Planos",
-        icon: Briefcase,
+        icon: CreditCard,
         path: "/aluno/planos",
-        subItems: null,
       },
       {
         title: "Minhas Faturas",
-        icon: FileText,
+        icon: Receipt,
         path: "/aluno/faturas",
-        subItems: null,
       },
     ],
+    userInfo: {
+      name: "Aluno",
+      email: "aluno@gmail.com",
+    },
   },
 
-  colaborador: {
-    userInfo: getCurrentUserInfo(),
+  instrutor: {
     menuItems: [
       {
-        title: "Dashboard",
-        icon: LayoutDashboard,
-        path: "/colaborador/dashboard",
-        subItems: null,
+        title: "Minha Agenda",
+        icon: Calendar,
+        path: "/instrutor/minhasaulas-instrutor",
       },
       {
-        title: "Perfil",
+        title: "Meus Alunos",
         icon: Users,
-        path: "/colaborador/perfil",
-        subItems: null,
+        path: "/instrutor/estudantes-instrutor",
       },
       {
-        title: "Documentos",
+        title: "Registro de Faltas / Presenças",
+        icon: CheckSquare,
+        path: "/instrutor/registro-presenca",
+      },
+      {
+        title: "Fichas de Evolução",
         icon: FileText,
-        path: "/colaborador/documentos",
-        subItems: null,
+        path: "/instrutor/Evolucao-Aluno",
       },
     ],
+    userInfo: {
+      name: "Instrutor",
+      email: "instrutor@email.com",
+    },
+  },
+
+  recepcionista: {
+    menuItems: [
+      {
+        title: "Estudantes",
+        icon: Users,
+        path: "/recepcionista/estudantes",
+      },
+      {
+        title: "Agenda dos Estúdios",
+        icon: Calendar,
+        path: "/recepcionista/agenda",
+      },
+      {
+        title: "Planos & Pagamentos",
+        icon: CreditCard,
+        path: "/recepcionista/planos-pagamentos",
+      },
+      {
+        title: "Contatos / Reagendamentos",
+        icon: Phone,
+        path: "/recepcionista/contatos-reagendamentos",
+      },
+    ],
+    userInfo: {
+      name: "Recepcionista",
+      email: "recepcionista@email.com",
+    },
   },
 };
 
-export const useSidebarConfig = (role) => {
-  return sidebarConfigs[role] || sidebarConfigs.aluno;
-};
-
-export const updateUserInSidebarConfig = (newUserData) => {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const updatedUser = { ...user, ...newUserData };
-  localStorage.setItem("user", JSON.stringify(updatedUser));
-};
+export default sidebarConfigs;

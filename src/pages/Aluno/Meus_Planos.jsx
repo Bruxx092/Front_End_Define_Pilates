@@ -1,10 +1,10 @@
 // @ts-nocheck
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
-import { CheckCircle2, Send, Loader } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
-import { planosService } from "@/services/planosService";
 
 function PlanCard(props) {
   const { name, price, frequency, benefits } = props;
@@ -107,7 +106,7 @@ function PlanOptionCard(props) {
 }
 
 function ChangePlanDialog(props) {
-  const { open, onOpenChange, onConfirm, selectedPlan, isLoading } = props;
+  const { open, onOpenChange, onConfirm, selectedPlan } = props;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-md md:max-w-lg rounded-xl p-4 sm:p-6">
@@ -127,20 +126,10 @@ function ChangePlanDialog(props) {
           <ButtonPlanos
             onClick={onConfirm}
             size="lg"
-            className="w-full text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
-            disabled={isLoading}
+            className="w-full text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {isLoading ? (
-              <>
-                <Loader className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Enviar solicitação
-              </>
-            )}
+            <Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+            Enviar solicitação
           </ButtonPlanos>
           <ButtonPlanos
             onClick={function () {
@@ -149,7 +138,6 @@ function ChangePlanDialog(props) {
             variant="outline"
             size="lg"
             className="w-full text-sm sm:text-base font-medium"
-            disabled={isLoading}
           >
             Cancelar
           </ButtonPlanos>
@@ -162,79 +150,204 @@ function ChangePlanDialog(props) {
 const Meus_Planos = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [selectedPlanName, setSelectedPlanName] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [currentPlan, setCurrentPlan] = useState(null);
-  const [availablePlans, setAvailablePlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [requestLoading, setRequestLoading] = useState(false);
   const { isMobile, sidebarWidth } = useSidebar();
 
-  useEffect(() => {
-    loadPlans();
-  }, []);
-
-  const loadPlans = async () => {
-    setLoading(true);
-    try {
-      const [current, available] = await Promise.all([
-        planosService.getCurrentPlan(),
-        planosService.getAvailablePlans(),
-      ]);
-      setCurrentPlan(current);
-      setAvailablePlans(available || []);
-    } catch (error) {
-      console.error("Erro ao carregar planos:", error);
-      setToastMessage("Erro ao carregar planos");
-      setToastVisible(true);
-    } finally {
-      setLoading(false);
-    }
+  const currentPlan = {
+    name: "Plano Mensal - 3x semana",
+    price: "R$ 390,00/mês",
+    frequency: "3 vezes por semana",
+    benefits: [
+      "Aulas de Pilates 3x na semana",
+      "Acesso livre aos equipamentos",
+      "Avaliação física mensal",
+      "Acompanhamento personalizado",
+    ],
   };
 
-  function handlePlanSelect(planId, planName) {
-    setSelectedPlanId(planId);
+  const availablePlans = [
+    {
+      id: "mensal-1x",
+      name: "Plano Mensal - 1x semana",
+      price: "R$ 210,00",
+      frequency: "1 vez por semana",
+      period: "por mês",
+      benefits: [
+        "Aulas de Pilates 1x na semana",
+        "Acesso aos equipamentos",
+        "Avaliação física mensal",
+      ],
+    },
+    {
+      id: "mensal-2x",
+      name: "Plano Mensal - 2x semana",
+      price: "R$ 310,00",
+      frequency: "2 vezes por semana",
+      period: "por mês",
+      benefits: [
+        "Aulas de Pilates 2x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+      ],
+    },
+    {
+      id: "mensal-3x",
+      name: "Plano Mensal - 3x semana",
+      price: "R$ 390,00",
+      frequency: "3 vezes por semana",
+      period: "por mês",
+      benefits: [
+        "Aulas de Pilates 3x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+      ],
+    },
+    {
+      id: "trimestral-1x",
+      name: "Plano Trimestral - 1x semana",
+      price: "3x R$ 185,00",
+      frequency: "1 vez por semana",
+      period: "a cada 3 meses",
+      benefits: [
+        "Aulas de Pilates 1x na semana",
+        "Acesso aos equipamentos",
+        "Avaliação física mensal",
+        "12% de desconto",
+      ],
+    },
+    {
+      id: "trimestral-2x",
+      name: "Plano Trimestral - 2x semana",
+      price: "3x R$ 285,00",
+      frequency: "2 vezes por semana",
+      period: "a cada 3 meses",
+      benefits: [
+        "Aulas de Pilates 2x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+        "8% de desconto",
+      ],
+    },
+    {
+      id: "trimestral-3x",
+      name: "Plano Trimestral - 3x semana",
+      price: "3x R$ 375,00",
+      frequency: "3 vezes por semana",
+      period: "a cada 3 meses",
+      benefits: [
+        "Aulas de Pilates 3x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+        "4% de desconto",
+        "1 aula particular inclusa",
+      ],
+    },
+    {
+      id: "semestral-1x",
+      name: "Plano Semestral - 1x semana",
+      price: "6x R$ 170,00",
+      frequency: "1 vez por semana",
+      period: "a cada 6 meses",
+      benefits: [
+        "Aulas de Pilates 1x na semana",
+        "Acesso aos equipamentos",
+        "Avaliação física mensal",
+        "19% de desconto",
+      ],
+    },
+    {
+      id: "semestral-2x",
+      name: "Plano Semestral - 2x semana",
+      price: "6x R$ 270,00",
+      frequency: "2 vezes por semana",
+      period: "a cada 6 meses",
+      benefits: [
+        "Aulas de Pilates 2x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+        "13% de desconto",
+        "1 aula particular inclusa",
+      ],
+    },
+    {
+      id: "semestral-3x",
+      name: "Plano Semestral - 3x semana",
+      price: "6x R$ 360,00",
+      frequency: "3 vezes por semana",
+      period: "a cada 6 meses",
+      benefits: [
+        "Aulas de Pilates 3x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+        "8% de desconto",
+        "2 aulas particulares inclusas",
+      ],
+    },
+    {
+      id: "anual-1x",
+      name: "Plano Anual - 1x semana",
+      price: "12x R$ 155,00",
+      frequency: "1 vez por semana",
+      period: "por ano",
+      benefits: [
+        "Aulas de Pilates 1x na semana",
+        "Acesso aos equipamentos",
+        "Avaliação física mensal",
+        "26% de desconto",
+      ],
+    },
+    {
+      id: "anual-2x",
+      name: "Plano Anual - 2x semana",
+      price: "12x R$ 255,00",
+      frequency: "2 vezes por semana",
+      period: "por ano",
+      benefits: [
+        "Aulas de Pilates 2x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+        "18% de desconto",
+        "2 aulas particulares inclusas",
+      ],
+    },
+    {
+      id: "anual-3x",
+      name: "Plano Anual - 3x semana",
+      price: "12x R$ 345,00",
+      frequency: "3 vezes por semana",
+      period: "por ano",
+      benefits: [
+        "Aulas de Pilates 3x na semana",
+        "Acesso livre aos equipamentos",
+        "Avaliação física mensal",
+        "Acompanhamento personalizado",
+        "12% de desconto",
+        "4 aulas particulares inclusas",
+        "Prioridade na reserva de horários",
+      ],
+    },
+  ];
+
+  function handlePlanSelect(planName) {
     setSelectedPlanName(planName);
     setDialogOpen(true);
   }
 
-  async function handleChangePlanRequest() {
-    setRequestLoading(true);
-    try {
-      await planosService.requestPlanChange(selectedPlanId);
-      setDialogOpen(false);
-      setToastMessage("Solicitação enviada com sucesso!");
-      setToastVisible(true);
-      setTimeout(() => {
-        setToastVisible(false);
-      }, 4000);
-      setSelectedPlanId("");
-      setSelectedPlanName("");
-    } catch (error) {
-      console.error("Erro ao solicitar mudança de plano:", error);
-      setToastMessage("Erro ao enviar solicitação. Tente novamente.");
-      setToastVisible(true);
-    } finally {
-      setRequestLoading(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <SidebarUnificada
-          menuItems={sidebarConfigs.aluno.menuItems}
-          userInfo={sidebarConfigs.aluno.userInfo}
-          isOpen={menuOpen}
-          onOpenChange={setMenuOpen}
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      </div>
-    );
+  function handleChangePlanRequest() {
+    setDialogOpen(false);
+    setToastVisible(true);
+    setTimeout(function () {
+      setToastVisible(false);
+    }, 4000);
+    setSelectedPlanName("");
   }
 
   return (
@@ -256,19 +369,17 @@ const Meus_Planos = () => {
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
           <div className="max-w-7xl mx-auto">
             <div className="space-y-6 sm:space-y-8">
-              {currentPlan && (
-                <section className="space-y-3 sm:space-y-4">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                    Plano Atual
-                  </h2>
-                  <PlanCard
-                    name={currentPlan.name}
-                    price={`R$ ${currentPlan.price}`}
-                    frequency={currentPlan.frequency}
-                    benefits={currentPlan.benefits || []}
-                  />
-                </section>
-              )}
+              <section className="space-y-3 sm:space-y-4">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                  Plano Atual
+                </h2>
+                <PlanCard
+                  name={currentPlan.name}
+                  price={currentPlan.price}
+                  frequency={currentPlan.frequency}
+                  benefits={currentPlan.benefits}
+                />
+              </section>
 
               <section className="space-y-3 sm:space-y-4">
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
@@ -280,15 +391,13 @@ const Meus_Planos = () => {
                       <PlanOptionCard
                         key={plan.id}
                         name={plan.name}
-                        price={`R$ ${plan.price}`}
+                        price={plan.price}
                         period={plan.period}
                         frequency={plan.frequency}
-                        benefits={plan.benefits || []}
-                        isCurrentPlan={
-                          currentPlan && plan.id === currentPlan.id
-                        }
+                        benefits={plan.benefits}
+                        isCurrentPlan={plan.name === currentPlan.name}
                         onSelect={function () {
-                          handlePlanSelect(plan.id, plan.name);
+                          handlePlanSelect(plan.name);
                         }}
                       />
                     );
@@ -304,12 +413,16 @@ const Meus_Planos = () => {
           onOpenChange={setDialogOpen}
           onConfirm={handleChangePlanRequest}
           selectedPlan={selectedPlanName}
-          isLoading={requestLoading}
         />
 
         {toastVisible && (
           <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg z-50 animate-in slide-in-from-bottom-5 max-w-[90vw] sm:max-w-md">
-            <p className="font-semibold text-sm sm:text-base">{toastMessage}</p>
+            <p className="font-semibold text-sm sm:text-base">
+              Solicitação enviada com sucesso!
+            </p>
+            <p className="text-xs sm:text-sm text-green-100 mt-1">
+              Nossa equipe confirmará em breve.
+            </p>
           </div>
         )}
       </div>
