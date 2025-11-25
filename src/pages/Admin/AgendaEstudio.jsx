@@ -230,7 +230,7 @@ export default function AgendaEstudio() {
                                 onYearChange={handleYearChange}
                             />
                         </div>
-+
+
                         <div>
                             {isLoading ? (
                                 <p className="col-span-full text-center text-gray-500 text-lg">Carregando aulas...</p>
