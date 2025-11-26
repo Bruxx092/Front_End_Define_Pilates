@@ -1,7 +1,7 @@
 // @ts-nocheck
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import { useState } from "react";
+import { useState,useCallback } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
 import { CheckCircle2, Send } from "lucide-react";
@@ -14,8 +14,31 @@ import {
   DialogTitle,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
+import { planosService } from "@/services/planosService";
+
 
 function PlanCard(props) {
+  const values_meus_planos = planosService.getCurrentPlan()
+  // console.log(values_meus_planos)
+  //No caso esse values_meus_planos é um obj que tem todas as caracteristicas para aplicar:
+  //exemplo
+  //{
+  //"id_contrato": 0,
+  //"data_termino": "2025-11-26T02:05:17.008Z",
+  //"aulas_restantes": 0,
+  //"status_contrato": "ativo",
+  //"detalhes_plano": {
+  //  "nome_plano": "string",
+  //  "modalidade": "string",
+  //  "tipo_plano": "string",
+  //  "descricao_plano": "string",
+  //  "valor_final_contrato": 0,
+  //  "qtde_aulas_totais_plano": 0
+  //}
+  //todos esse dados vão vir em forma de objeto, se vc quiser aplicar um tratamento para ele, fica por sua conta,
+  //eu acharia melhor vc criar uma classe, se tiver em javaScript, para tipar ela, para ter ajuda do preenchimento automatico e n errar na escrita
+  //mas se você quiser continuar com obj->array tmb é sucesso
+
   const { name, price, frequency, benefits } = props;
   return (
     <Card className="p-4 sm:p-6 shadow-md border-2 border-blue-200 bg-white">
@@ -106,7 +129,64 @@ function PlanOptionCard(props) {
 }
 
 function ChangePlanDialog(props) {
-  const { open, onOpenChange, onConfirm, selectedPlan } = props;
+  const { open, onOpenChange, onConfirm, selectedPlan,selectedPlanId } = props;
+  // const all_planos = planosService.getAvailablePlans()
+  //Praticamente a msm coisa do search de plano do estundate, esse endpoint foi até que fácil em sua construção
+  //dado que não tive que usar o mogno XDXD, apenas o PostGres, mas msm assim foi um saco ter q fazer o trabalho de um
+  //indivíduo.... XXXXXXX
+  //segue o schema de chegado do back quando vc faz a requisição:
+  ///[
+  //{
+  //  "id_plano": 1,
+  //  "tipo_plano": "padrao",
+  //  "modalidade_plano": "1x_semana",
+  //  "descricao_plano": "Plano mensal 1x por semana",
+  //  "valor_plano": "210.00",
+  //  "qtde_aulas_totais": 4
+  //},
+  //{
+  //  "id_plano": 2,
+  //  "tipo_plano": "padrao",
+  //  "modalidade_plano": "2x_semana",
+  //  "descricao_plano": "Plano mensal 2x por semana",
+  //  "valor_plano": "310.00",
+  //  "qtde_aulas_totais": 8
+  //},
+  // .... demais arraya
+  // tmb volta como objeto, por isso acho bom vc criar uma classe de tipagem, não como funciona no 
+  //react, mas facilitaria na hora de manipulação dos dados e alocação em seus campos
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleConfirmRequest = useCallback(async () => {
+
+    //Bom nessa parte PEdro ele acaba recebendo a ação de click do botão de realizar solicitação
+    //fiz os teste com o server local do python e foi, gravado no banco e pa 
+    const message = "Solicitação de teste para mudança de plano.";
+    const planId = 5; //Você pode fazer uma lógica, em conjunto com a de select_all_plan(no seu caso o getAvailablePlans)
+    //eles já vem com id.. então você pode usar ele, deve usar eles, para mandar a requisição para a parte de solicitação
+    // não precisa moostrar a id na interface, pode ficar por baixo dos panos msm, então não se preocupe 
+
+    if (planId === null) {
+      setError("Selecione um plano válido antes de enviar.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await planosService.requestPlanChange(message, planId);
+      onConfirm(); 
+    } catch (err) {
+      console.error("Falha ao enviar solicitação:", err);
+      setError("Falha na solicitação. Verifique se o ID do plano é válido.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedPlanId, onConfirm]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-md md:max-w-lg rounded-xl p-4 sm:p-6">
@@ -153,7 +233,7 @@ const Meus_Planos = () => {
   const [selectedPlanName, setSelectedPlanName] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
   const { isMobile, sidebarWidth } = useSidebar();
-
+  
   const currentPlan = {
     name: "Plano Mensal - 3x semana",
     price: "R$ 390,00/mês",
