@@ -3,45 +3,47 @@ import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import React, { useState, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
 import { ChevronDown, Plus, X } from 'lucide-react';
+import api from "@/services/api";
+
 
 // Cores do design
 const darkBlueBg = 'bg-[#3A4A9B]';
 const whiteText = 'text-white';
 const blackText = 'text-black';
 
-const BASE_URL = 'http://localhost:8000';
+// const BASE_URL = 'http://localhost:8000';
 
-// --- FUNÇÃO FETCH SEGURA ---
-async function safeFetch(endpoint, options = {}) {
-    const token = localStorage.getItem('accessToken');
+// // --- FUNÇÃO FETCH SEGURA ---
+// async function safeFetch(endpoint, options = {}) {
+//     const token = localStorage.getItem('accessToken');
     
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers
-    };
+//     const headers = {
+//         'Content-Type': 'application/json',
+//         ...(token && { 'Authorization': `Bearer ${token}` }),
+//         ...options.headers
+//     };
 
-    try {
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
-            ...options,
-            headers
-        });
+//     try {
+//         const response = await fetch(`${BASE_URL}${endpoint}`, {
+//             ...options,
+//             headers
+//         });
 
-        if (response.status === 401 || response.status === 403) {
-            console.warn(`[SafeFetch] Bloqueado em ${endpoint} (${response.status}). Ignorando.`);
-            return null; 
-        }
+//         if (response.status === 401 || response.status === 403) {
+//             console.warn(`[SafeFetch] Bloqueado em ${endpoint} (${response.status}). Ignorando.`);
+//             return null; 
+//         }
 
-        if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
-        }
+//         if (!response.ok) {
+//             throw new Error(`Erro HTTP: ${response.status}`);
+//         }
 
-        return await response.json();
-    } catch (error) {
-        console.error("Erro na requisição segura:", error);
-        return null;
-    }
-}
+//         return await response.json();
+//     } catch (error) {
+//         console.error("Erro na requisição segura:", error);
+//         return null;
+//     }
+// }
 
 // --- MODAL ---
 const NewClassModal = ({ isOpen, onClose, students, onConfirm, isLoading }) => {
@@ -52,7 +54,6 @@ const NewClassModal = ({ isOpen, onClose, students, onConfirm, isLoading }) => {
         modalidade: 'Pilates',
     });
 
-    // Resetar form ao abrir
     useEffect(() => {
         if (isOpen) {
             setFormData({
@@ -207,7 +208,6 @@ const ClassCard = ({ modality, date, time, studio, studentName }) => (
         </div>
     </article>
 );
-
 // --- COMPONENTE PRINCIPAL ---
 export default function MinhasAulasInstrutor() {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -225,84 +225,44 @@ export default function MinhasAulasInstrutor() {
     // Estado para armazenar o ID do instrutor logado
     const [instructorId, setInstructorId] = useState(null);
 
-    // --- INICIALIZAÇÃO E DADOS ---
-    useEffect(() => {
-        console.log("✅ Página carregada - usando fetch nativo");
-        
-        // Carrega dados
-        fetchData();
-        fetchCurrentUser();
-    }, []);
+    const [userName, setUserName] = useState('');
+    const [userEmail, setUserEmail] = useState('');
+    const [userAccessLevel, setUserAccessLevel] = useState(null); 
+    const [professorData, setProfessorData] = useState(null); 
 
-    useEffect(() => {
-        filterClasses();
-    }, [classes, selectedDay, currentMonth, currentYear]);
 
-    // --- BUSCA DE DADOS DO USUÁRIO LOGADO - VERSÃO CORRIGIDA ---
+    
+
     const fetchCurrentUser = async () => {
-        console.log("🔄 Buscando dados do usuário logado...");
+        console.log("Buscando dados do usuário logado...");
         
-        // MÉTODO 1: Tentar via /users/me
-        let user = await safeFetch('/users/me');
+        let user = await api.get('/users/me');
+        console.log(user)
+        try {
+        const response = await api.get('/users/me');
+        const user = response.data; 
         
-        if (!user) {
-            console.log("❌ /users/me falhou. Tentando método alternativo...");
-            
-            // MÉTODO 2: Tentar extrair do token JWT
-            const token = localStorage.getItem('accessToken');
-            if (token) {
-                try {
-                    // Decodificar o token JWT (parte do payload)
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    console.log("📋 Payload do JWT:", payload);
-                    
-                    user = {
-                        id_user: payload.sub || payload.id_user,
-                        professor: payload.professor || null
-                    };
-                    console.log("✅ Usuário extraído do JWT:", user);
-                } catch (error) {
-                    console.error("❌ Erro ao decodificar JWT:", error);
-                }
-            }
-            
-            // MÉTODO 3: Buscar todas as aulas e inferir o instrutor
-            if (!user) {
-                console.log("🔍 Tentando inferir instrutor das aulas...");
-                const aulas = await safeFetch('/aulas/');
-                if (aulas && aulas.length > 0) {
-                    // Pegar o professor da primeira aula
-                    const primeiraAula = aulas[0];
-                    if (primeiraAula.fk_id_professor) {
-                        user = {
-                            id_user: primeiraAula.fk_id_professor,
-                            professor: { id_professor: primeiraAula.fk_id_professor }
-                        };
-                        console.log("✅ Instrutor inferido das aulas:", user);
-                    }
-                }
-            }
-        }
+        console.log("Dados do usuário recebidos:", user);
+        
+            if (user) {
 
-        if (user) {
-            // Tenta várias formas de obter o ID do professor
-            if (user.professor && user.professor.id_professor) {
-                console.log("🎯 ID do professor encontrado:", user.professor.id_professor);
-                setInstructorId(user.professor.id_professor);
-            } else if (user.id_user) {
-                console.log("⚠️  Usando ID do usuário como fallback:", user.id_user);
-                setInstructorId(user.id_user);
+                setUserName(user.name_user || '');
+                setUserEmail(user.email_user || '');
+                setUserAccessLevel(user.lv_acesso || null);
+                
+                const profId = user.professor?.id_professor || user.id_user;
+                setInstructorId(profId); 
+                setProfessorData(user.professor || null); 
+                console.log("ID do professor alocado:", profId);
+                
+                return user;
             } else {
-                console.error("❌ Não foi possível obter ID do instrutor");
-                // Fallback final - usar um ID fixo (você pode ajustar conforme seu banco)
-                setInstructorId(1);
-                console.log("🔄 Usando ID fixo como fallback: 1");
+                console.error("Rota de: ->verificar/users/me falhou. Dados de usuário vazios.");
+                return null;
             }
-        } else {
-            console.error("❌ Não foi possível carregar dados do usuário");
-            // Fallback crítico
-            setInstructorId(1);
-            console.log("🚨 Fallback crítico - ID do instrutor definido como: 1");
+        } catch (err) {
+            console.error("Erro ao buscar dados do user", err);
+            return null;
         }
     };
 
@@ -314,7 +274,7 @@ export default function MinhasAulasInstrutor() {
         // PRIMEIRO: Buscar TODOS os alunos disponíveis via API
         try {
             console.log("🔍 Buscando TODOS os alunos via API...");
-            const allStudents = await safeFetch('/alunos/');
+            const allStudents = await safeFetch('/alunos/'); /// Allan, vc deve altearar para api ou excluir esse fetch
             console.log("📦 Alunos retornados da API /alunos/:", allStudents);
             
             if (allStudents && Array.isArray(allStudents)) {
@@ -363,7 +323,7 @@ export default function MinhasAulasInstrutor() {
                         id: studentId, 
                         nome: studentName 
                     });
-                    console.log(`✅ ALUNO EXTRAÍDO: ${studentName} (ID: ${studentId})`);
+                    console.log(`ALUNO EXTRAÍDO: ${studentName} (ID: ${studentId})`);
                 }
             }
         });
@@ -386,60 +346,145 @@ export default function MinhasAulasInstrutor() {
             setStudents(studentsArray);
         }
     };
+    const fetchData = async (id) => {
+        if (!id) return;
 
-    const fetchData = async () => {
         setIsLoading(true);
-        console.log("🔄 Buscando aulas da API...");
+        console.log(`🔄 Buscando agenda de aulas para instrutor ID: ${id} via Axios...`);
         
+        const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+        const endDate = `${currentYear + 1}-01-01`; 
+
         try {
-            const data = await safeFetch('/aulas/'); 
+            const response = await api.get('/agenda/minhas_aulas', {
+                params: { 
+                    start_date: startDate,
+                    end_date: endDate
+                }
+            });
             
-            console.log("📋 Dados brutos retornados da API:", data);
+            const data = response.data; 
+            console.log("Agenda de aulas bruta retornada da API:", data);
             
             if (data && Array.isArray(data)) {
-                console.log(`✅ ${data.length} aulas recebidas da API`);
-                
-                const formattedClasses = data.map((cls, index) => {
-                    console.log(`\n--- Processando Aula ${index + 1} ---`);
-                    
-                    // Processar data
-                    const datePart = cls.data_aula ? cls.data_aula.split('T')[0] : ''; 
-                    const dateParts = datePart.split('-');
-                    const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : 'Data inválida';
-                    
-                    return {
-                        id: cls.id || cls.id_aula || `aula-${index}`,
-                        modality: cls.modalidade || cls.titulo_aula || 'Aula',
-                        date: formattedDate,
-                        fullDate: datePart, 
-                        time: cls.horario_aula || '08:00', 
-                        studio: 'Estúdio Ghibli', 
-                        // Manter a estrutura original para extração
-                        ...cls
-                    };
-                });
+                const formattedClasses = data
+                    .filter(cls => cls.professorResponsavel === id) 
+                    .map((cls, index) => {
+                        // console.log(cls.dataAgendaAula)
+                        // console.log(cls.)
+                        const fullDateTime = cls.dataAgendaAula || '2025-01-01T00:00:00';
+                        const [datePart, timePart] = fullDateTime.split('T');
+                        const dateParts = datePart.split('-');
+                        const day = dateParts[2];
+                        const month = dateParts[1];
 
+                        const formattedDate = `${day}/${month}`; 
+                        const time = timePart ? timePart.substring(0, 5) : '00:00'; 
+                        
+                        return {
+                            id: cls.AulaID || `aula-${index}`,
+                            modality: cls.tituloAulaCompleto || cls.titulo_aula || 'Aula', 
+                            date: formattedDate,
+                            fullDate: datePart, 
+                            time: time, 
+                            studentName: 'não disponivel', 
+                            studio: cls.EstudioID === 1 ? 'Estudio de itaquera' : `Estúdio ${cls.EstudioID}`, 
+                            ...cls 
+                        };
+                        
+                        // return {
+                        //     id: cls.AulaID || `aula-${index}`,
+                        //     modality: cls.tituloAulaCompleto || 'Aula',
+                        //     date: formattedDate,
+                        //     fullDate: datePart, // YYYY-MM-DD
+                        //     time: time, 
+                        //     studentName: 'Não disponível', 
+                        //     studio: 'Estúdio Ghibli', 
+                        //     ...cls 
+                        // };
+                    });
+                    
+                // console.log(`${formattedClasses}\n\n\n`)
                 setClasses(formattedClasses);
-                await extractStudentsFromClasses(data); // Passar os dados ORIGINAIS para extração
+
             } else {
-                console.log("❌ Nenhum dado retornado das aulas ou formato inválido");
+                console.log("Nenhum dado retornado das aulas ou formato inválido");
                 setClasses([]);
-                // Forçar alunos de fallback
-                setStudents([
-                    { id: 1, nome: "Aluno Teste Final" }
-                ]);
             }
         } catch (error) {
-            console.error("❌ Erro ao buscar aulas:", error);
-            setClasses([]);
-            // Forçar alunos de fallback em caso de erro
-            setStudents([
-                { id: 1, nome: "Aluno Teste Final" }
-            ]);
+            console.error(" Erro ao buscar aulas:", error);
         } finally {
             setIsLoading(false);
         }
     };
+
+    // const fetchData = async () => {
+    //     setIsLoading(true);
+    //     console.log("🔄 Buscando aulas da API...");
+        
+    //     try {
+    //         const data = await safeFetch('/aulas/'); 
+            
+    //         console.log("📋 Dados brutos retornados da API:", data);
+            
+    //         if (data && Array.isArray(data)) {
+    //             console.log(`✅ ${data.length} aulas recebidas da API`);
+                
+    //             const formattedClasses = data.map((cls, index) => {
+    //                 console.log(`\n--- Processando Aula ${index + 1} ---`);
+                    
+    //                 // Processar data
+    //                 const datePart = cls.data_aula ? cls.data_aula.split('T')[0] : ''; 
+    //                 const dateParts = datePart.split('-');
+    //                 const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : 'Data inválida';
+                    
+    //                 return {
+    //                     id: cls.id || cls.id_aula || `aula-${index}`,
+    //                     modality: cls.modalidade || cls.titulo_aula || 'Aula',
+    //                     date: formattedDate,
+    //                     fullDate: datePart, 
+    //                     time: cls.horario_aula || '08:00', 
+    //                     studio: 'Estúdio Ghibli', 
+    //                     // Manter a estrutura original para extração
+    //                     ...cls
+    //                 };
+    //             });
+
+    //             setClasses(formattedClasses);
+    //             await extractStudentsFromClasses(data); // Passar os dados ORIGINAIS para extração
+    //         } else {
+    //             console.log("❌ Nenhum dado retornado das aulas ou formato inválido");
+    //             setClasses([]);
+    //             // Forçar alunos de fallback
+    //             setStudents([
+    //                 { id: 1, nome: "Aluno Teste Final" }
+    //             ]);
+    //         }
+    //     } catch (error) {
+    //         console.error("❌ Erro ao buscar aulas:", error);
+    //         setClasses([]);
+    //         // Forçar alunos de fallback em caso de erro
+    //         setStudents([
+    //             { id: 1, nome: "Aluno Teste Final" }
+    //         ]);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
+    useEffect(() => {
+        fetchCurrentUser();
+        extractStudentsFromClasses();
+    }, []);
+
+    useEffect(() => {
+        if (instructorId) {
+            fetchData(instructorId); 
+        }
+    }, [instructorId, currentMonth, currentYear]); 
+
+    useEffect(() => {
+        filterClasses();
+    }, [classes, selectedDay, currentMonth, currentYear]);
 
     const filterClasses = () => {
         let filtered = classes.filter(c => {
@@ -471,18 +516,16 @@ export default function MinhasAulasInstrutor() {
         setIsCreating(true);
         console.log("🔄 Iniciando criação de aula...");
         
-        // Validação de segurança: Precisamos do ID do instrutor
         if (!instructorId) {
-            alert("❌ Erro: Não foi possível identificar o ID do instrutor logado. Tente recarregar a página.");
+            alert(" Erro: Não foi possível identificar o ID do instrutor logado. Tente recarregar a página.");
             setIsCreating(false);
             return;
         }
 
-        console.log("🎯 ID do instrutor:", instructorId);
-        console.log("📝 Dados do formulário:", formData);
+        console.log("ID do instrutor:", instructorId);
+        console.log(" Dados do formulário:", formData);
 
         try {
-            // 1. Criar a Aula - POST /aulas/
             const aulaPayload = {
                 data_aula: `${formData.data_aula}T${formData.horario_aula}:00`, 
                 titulo_aula: formData.modalidade,

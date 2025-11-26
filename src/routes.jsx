@@ -44,6 +44,11 @@ import MinhasAulasInstrutor from "./pages/Instrutor/MinhasAulasInstrutor";
 
 import { SidebarProvider } from "./context/SidebarContext";
 
+//Jhon aplicou isso:
+import PlanSelection from "./pages/PLanos/PlanSelection";
+import ClassEnrollment from "./pages/Planos/ClassEnrollment";
+
+
 function AppRoutes() {
   return (
     <Router>
@@ -119,6 +124,8 @@ function AppRoutes() {
           <Route path="colaboradores" element={<ColaboradoresPage />} />
           <Route path="colaboradores/:id" element={<FichaTecnica />} />
           <Route path="alertas" element={<Alertas />} />
+          <Route path="selecao-plano" element={<PlanSelection />} />
+          <Route path="matricular-aulas" element={<ClassEnrollment />} />
           <Route path="financas" element={<Financas />} />
         </Route>
       </Routes>
