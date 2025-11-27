@@ -1,73 +1,53 @@
-// @ts-nocheck
-// import apiClient from "./api";
-import api from "./api";
-
+import api from './api';
 
 export const planosService = {
-  getCurrentPlan: async () => {
-    try {
-      const response = await api.get("/planos/my-active-plano");
-      // console.log(response.data)
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao buscar plano atual:", error);
-      if (error.response?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
-  },
-
+  // Busca todos os planos disponíveis
   getAvailablePlans: async () => {
     try {
-      const response = await api.get("/planos/geral");
-      if (response){
-        return response.data;
-      }
+      const response = await api.get('/planos/geral');
+      return response.data;
     } catch (error) {
       console.error("Erro ao buscar planos disponíveis:", error);
-      throw error;
+      return [];
     }
   },
 
-  requestPlanChange: async (menssagem, planId) => {
+  // Busca o plano ATUAL do aluno logado
+  getCurrentPlan: async () => {
     try {
-      // const tipo_solcitacao = 'plano'
-      // const acao_solcitacao_plano ='MUDANCA_PLANO'
-      // const acao_solcitacao_aula =null
-      // const fk_id_aula_referencia=null
-      // const data_sugerida=null
-      // const plano_padrao_id = planId
-      // const plano_personalizado=null
-      // const fk_id_novo_plano=planId
+      // Rota para pegar o contrato ativo
+      const response = await api.get('/planos/my-active-plano');
+      const data = response.data;
 
-      const request_new_plano={
-        "menssagem": menssagem,
-        "tipo_de_solicitacao": 'plano',
-        "acao_solicitacao_plano": 'MUDANCA_PLANO',
-        "acao_solicitacao_aula": null,
-        "fk_id_aula_referencia": null,
-        "data_sugerida": null,
-        "fk_id_novo_plano": planId,
-        "fk_id_novo_plano_personalizado": null,
+      if (!data || !data.detalhes_plano) {
+        return null;
       }
-      const response = await api.post("/solicitacao/createSolcicitacao", 
-        request_new_plano
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao solicitar mudança de plano:", error);
-      throw error;
-    }
-  },
 
-  getPlanChangeHistory: async () => {
-    try {
-      const response = await api.get("/student/plans/change-history");
-      return response.data;
+      const detalhes = data.detalhes_plano;
+
+      // Traduz os dados do back para o front
+      return {
+        id: data.id_contrato,
+        name: detalhes.descricao_plano || detalhes.nome_plano || "Plano sem nome",
+        price: `R$ ${detalhes.valor_final_contrato}`, 
+        frequency: detalhes.modalidade ? detalhes.modalidade.replace(/_/g, ' ') : "Frequência não informada",
+        benefits: [
+            `Total de aulas: ${detalhes.qtde_aulas_totais_plano}`,
+            `Status: ${data.status_contrato}`,
+            data.data_termino ? `Vence em: ${new Date(data.data_termino).toLocaleDateString('pt-BR')}` : "Sem data de término",
+            "Acesso aos equipamentos"
+        ]
+      };
+
     } catch (error) {
-      console.error("Erro ao buscar histórico de planos:", error);
-      throw error;
+      console.error("Erro ao buscar plano atual:", error);
+      return null;
     }
   },
+  
+  // Enviar solicitação de mudança
+  // ROTA CORRIGIDA conforme a imagem: createSolcicitacao (sic)
+  requestPlanChange: async (payload) => {
+      return api.post('/solicitacao/createSolcicitacao', payload);
+  }
 };

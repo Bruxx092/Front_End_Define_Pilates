@@ -1,7 +1,7 @@
 // @ts-nocheck
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
 import { CheckCircle2, Send } from "lucide-react";
@@ -14,9 +14,9 @@ import {
   DialogTitle,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
-import api from "@/services/api";
+import { planosService } from "@/services/planosService";
 
-// --- Componentes Auxiliares (Mantidos) ---
+// --- Componentes Auxiliares ---
 
 function PlanCard({ name, price, frequency, benefits }) {
   return (
@@ -147,52 +147,60 @@ const Meus_Planos = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [currentPlan, setCurrentPlan] = useState(null);
   const [availablePlans, setAvailablePlans] = useState([]);
+  
+  const [isLoadingCurrentPlan, setIsLoadingCurrentPlan] = useState(true);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState({ title: "", desc: "", type: "success" });
 
   const { isMobile, sidebarWidth } = useSidebar();
 
-  // Mock do plano atual (idealmente buscaria do back também)
-  const currentPlan = {
-    id: 99,
-    name: "Plano Mensal - 3x semana",
-    price: "R$ 390,00/mês",
-    frequency: "3 vezes por semana",
-    benefits: [
-      "Aulas de Pilates 3x na semana",
-      "Acesso livre aos equipamentos",
-      "Avaliação física mensal",
-      "Acompanhamento personalizado",
-    ],
+  const showToast = (title, desc, type) => {
+    // Garante que desc seja sempre uma string para evitar erro de objeto no React
+    const safeDesc = typeof desc === 'string' ? desc : JSON.stringify(desc);
+    
+    setToastMessage({ title, desc: safeDesc, type });
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 4000);
   };
 
   useEffect(() => {
-    const fetchPlanos = async () => {
-      try {
-        const response = await api.get('/planos/geral');
-        const plansMapped = response.data.map(p => ({
-            id: p.id_plano || p.id,
-            name: p.descricao_plano || p.nome || p.titulo,
-            price: `R$ ${p.valor_plano}`,
-            frequency: p.modalidade_plano || "Frequência a definir",
-            period: p.tipo_plano === 'padrao' ? 'por mês' : 'período definido',
-            benefits: [
-                `Aulas: ${p.qtde_aulas_totais || '?'}`,
-                "Acesso aos equipamentos"
-            ]
-        }));
-        setAvailablePlans(plansMapped);
-      } catch (error) {
-        console.error("Erro ao buscar planos:", error);
-      } finally {
-        setIsLoadingPlans(false);
-      }
+    const loadData = async () => {
+        setIsLoadingCurrentPlan(true);
+        setIsLoadingPlans(true);
+
+        try {
+            const activePlan = await planosService.getCurrentPlan();
+            setCurrentPlan(activePlan);
+
+            const plansData = await planosService.getAvailablePlans();
+            const plansMapped = plansData.map(p => ({
+                id: p.id_plano || p.id,
+                name: p.descricao_plano || p.nome || p.titulo,
+                price: `R$ ${p.valor_plano}`,
+                frequency: p.modalidade_plano || "Frequência a definir",
+                period: p.tipo_plano === 'padrao' ? 'por mês' : 'período definido',
+                benefits: [
+                    `Aulas: ${p.qtde_aulas_totais || '?'}`,
+                    "Acesso aos equipamentos"
+                ]
+            }));
+            setAvailablePlans(plansMapped);
+
+        } catch (error) {
+            console.error("Erro ao carregar dados:", error);
+            showToast("Erro", "Falha ao carregar informações dos planos.", "error");
+        } finally {
+            setIsLoadingCurrentPlan(false);
+            setIsLoadingPlans(false);
+        }
     };
 
-    fetchPlanos();
+    loadData();
   }, []);
 
   const handlePlanSelect = (plan) => {
@@ -213,13 +221,12 @@ const Meus_Planos = () => {
         fk_id_aula_referencia: null,
         data_sugerida: null,
         fk_id_novo_plano: selectedPlan.id,
-        fk_id_novo_plano_personalizado: null
+        fk_id_novo_plano_personalizado: null,
     };
 
     try {
-        // ROTA CONFIRMADA (com o erro de digitação do back-end)
-        await api.post('/solicitacao/createSolcicitacao', payload); 
-
+        await planosService.requestPlanChange(payload);
+        
         showToast("Solicitação enviada com sucesso!", "Nossa equipe confirmará em breve.", "success");
         setDialogOpen(false);
         setSelectedPlan(null);
@@ -227,36 +234,26 @@ const Meus_Planos = () => {
     } catch (error) {
         console.error("Erro na solicitação:", error);
         
-        // Log detalhado para ver O QUE está errado no payload
-        if (error.response?.status === 400) {
-            console.log("Detalhes do erro 400:", error.response.data);
-            // Muitas vezes o FastAPI retorna o erro em 'detail'
-            if (error.response.data?.detail) {
-                console.log("Validação falhou em:", error.response.data.detail);
+        // Tratamento seguro da mensagem de erro
+        let errorMsg = "Erro desconhecido";
+        
+        if (error.response?.data?.detail) {
+            const detail = error.response.data.detail;
+            // Se detail for array (comum no FastAPI), formata ele
+            if (Array.isArray(detail)) {
+                errorMsg = detail.map(e => e.msg).join(', ');
+            } else {
+                errorMsg = String(detail);
             }
+        } else if (error.message) {
+            errorMsg = error.message;
         }
 
-        const errorDetail = error.response?.data?.detail || error.message || "Erro desconhecido";
-        
-        // Se o detalhe for um array (comum no FastAPI para erros de validação), formatamos
-        let displayError = errorDetail;
-        if (Array.isArray(errorDetail)) {
-            displayError = errorDetail.map(e => `${e.loc.join('.')} -> ${e.msg}`).join(' | ');
-        }
-
-        showToast("Erro na Solicitação", `(${error.response?.status}) ${displayError}`, "error");
-        
-        // Não fecha o modal no erro para permitir corrigir
-        // setDialogOpen(false); 
+        showToast("Erro na Solicitação", errorMsg, "error");
+        setDialogOpen(false); 
     } finally {
         setIsSubmitting(false);
     }
-  };
-
-  const showToast = (title, desc, type) => {
-    setToastMessage({ title, desc, type });
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 4000);
   };
 
   return (
@@ -283,12 +280,25 @@ const Meus_Planos = () => {
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Plano Atual
                 </h2>
-                <PlanCard
-                  name={currentPlan.name}
-                  price={currentPlan.price}
-                  frequency={currentPlan.frequency}
-                  benefits={currentPlan.benefits}
-                />
+                
+                {isLoadingCurrentPlan ? (
+                    <div className="p-6 bg-white rounded-lg shadow border border-gray-200 animate-pulse">
+                        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/5"></div>
+                    </div>
+                ) : currentPlan ? (
+                    <PlanCard
+                      name={currentPlan.name}
+                      price={currentPlan.price}
+                      frequency={currentPlan.frequency}
+                      benefits={currentPlan.benefits}
+                    />
+                ) : (
+                    <div className="p-6 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800">
+                        Você ainda não possui um plano ativo. Escolha um abaixo para começar!
+                    </div>
+                )}
               </section>
 
               <section className="space-y-3 sm:space-y-4">
@@ -308,7 +318,7 @@ const Meus_Planos = () => {
                         period={plan.period}
                         frequency={plan.frequency}
                         benefits={plan.benefits}
-                        isCurrentPlan={plan.name === currentPlan.name}
+                        isCurrentPlan={currentPlan && currentPlan.name === plan.name}
                         onSelect={() => handlePlanSelect(plan)}
                         />
                     ))}
