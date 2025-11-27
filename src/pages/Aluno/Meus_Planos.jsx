@@ -1,7 +1,7 @@
 // @ts-nocheck
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import { useState,useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
 import { CheckCircle2, Send } from "lucide-react";
@@ -14,32 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
-import { planosService } from "@/services/planosService";
+import api from "@/services/api";
 
+// --- Componentes Auxiliares (Mantidos) ---
 
-function PlanCard(props) {
-  const values_meus_planos = planosService.getCurrentPlan()
-  // console.log(values_meus_planos)
-  //No caso esse values_meus_planos é um obj que tem todas as caracteristicas para aplicar:
-  //exemplo
-  //{
-  //"id_contrato": 0,
-  //"data_termino": "2025-11-26T02:05:17.008Z",
-  //"aulas_restantes": 0,
-  //"status_contrato": "ativo",
-  //"detalhes_plano": {
-  //  "nome_plano": "string",
-  //  "modalidade": "string",
-  //  "tipo_plano": "string",
-  //  "descricao_plano": "string",
-  //  "valor_final_contrato": 0,
-  //  "qtde_aulas_totais_plano": 0
-  //}
-  //todos esse dados vão vir em forma de objeto, se vc quiser aplicar um tratamento para ele, fica por sua conta,
-  //eu acharia melhor vc criar uma classe, se tiver em javaScript, para tipar ela, para ter ajuda do preenchimento automatico e n errar na escrita
-  //mas se você quiser continuar com obj->array tmb é sucesso
-
-  const { name, price, frequency, benefits } = props;
+function PlanCard({ name, price, frequency, benefits }) {
   return (
     <Card className="p-4 sm:p-6 shadow-md border-2 border-blue-200 bg-white">
       <div className="mb-4">
@@ -55,24 +34,20 @@ function PlanCard(props) {
         <p className="text-sm font-semibold text-gray-900 mb-3">
           Benefícios inclusos:
         </p>
-        {benefits.map(function (benefit, index) {
-          return (
-            <div key={index} className="flex items-start gap-3">
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-sm sm:text-base text-gray-900 leading-relaxed">
-                {benefit}
-              </span>
-            </div>
-          );
-        })}
+        {benefits && benefits.map((benefit, index) => (
+          <div key={index} className="flex items-start gap-3">
+            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <span className="text-sm sm:text-base text-gray-900 leading-relaxed">
+              {benefit}
+            </span>
+          </div>
+        ))}
       </div>
     </Card>
   );
 }
 
-function PlanOptionCard(props) {
-  const { name, price, period, frequency, benefits, isCurrentPlan, onSelect } =
-    props;
+function PlanOptionCard({ name, price, period, frequency, benefits, isCurrentPlan, onSelect }) {
   return (
     <Card
       className={
@@ -99,16 +74,14 @@ function PlanOptionCard(props) {
       </div>
 
       <div className="space-y-2 sm:space-y-2.5 mb-4 sm:mb-6 flex-grow">
-        {benefits.map(function (benefit, index) {
-          return (
-            <div key={index} className="flex items-start gap-2 sm:gap-2.5">
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-xs sm:text-sm text-gray-900 leading-relaxed">
-                {benefit}
-              </span>
-            </div>
-          );
-        })}
+        {benefits && benefits.map((benefit, index) => (
+          <div key={index} className="flex items-start gap-2 sm:gap-2.5">
+            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <span className="text-xs sm:text-sm text-gray-900 leading-relaxed">
+              {benefit}
+            </span>
+          </div>
+        ))}
       </div>
 
       <ButtonPlanos
@@ -128,65 +101,7 @@ function PlanOptionCard(props) {
   );
 }
 
-function ChangePlanDialog(props) {
-  const { open, onOpenChange, onConfirm, selectedPlan,selectedPlanId } = props;
-  // const all_planos = planosService.getAvailablePlans()
-  //Praticamente a msm coisa do search de plano do estundate, esse endpoint foi até que fácil em sua construção
-  //dado que não tive que usar o mogno XDXD, apenas o PostGres, mas msm assim foi um saco ter q fazer o trabalho de um
-  //indivíduo.... XXXXXXX
-  //segue o schema de chegado do back quando vc faz a requisição:
-  ///[
-  //{
-  //  "id_plano": 1,
-  //  "tipo_plano": "padrao",
-  //  "modalidade_plano": "1x_semana",
-  //  "descricao_plano": "Plano mensal 1x por semana",
-  //  "valor_plano": "210.00",
-  //  "qtde_aulas_totais": 4
-  //},
-  //{
-  //  "id_plano": 2,
-  //  "tipo_plano": "padrao",
-  //  "modalidade_plano": "2x_semana",
-  //  "descricao_plano": "Plano mensal 2x por semana",
-  //  "valor_plano": "310.00",
-  //  "qtde_aulas_totais": 8
-  //},
-  // .... demais arraya
-  // tmb volta como objeto, por isso acho bom vc criar uma classe de tipagem, não como funciona no 
-  //react, mas facilitaria na hora de manipulação dos dados e alocação em seus campos
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleConfirmRequest = useCallback(async () => {
-
-    //Bom nessa parte PEdro ele acaba recebendo a ação de click do botão de realizar solicitação
-    //fiz os teste com o server local do python e foi, gravado no banco e pa 
-    const message = "Solicitação de teste para mudança de plano.";
-    const planId = 5; //Você pode fazer uma lógica, em conjunto com a de select_all_plan(no seu caso o getAvailablePlans)
-    //eles já vem com id.. então você pode usar ele, deve usar eles, para mandar a requisição para a parte de solicitação
-    // não precisa moostrar a id na interface, pode ficar por baixo dos panos msm, então não se preocupe 
-
-    if (planId === null) {
-      setError("Selecione um plano válido antes de enviar.");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      await planosService.requestPlanChange(message, planId);
-      onConfirm(); 
-    } catch (err) {
-      console.error("Falha ao enviar solicitação:", err);
-      setError("Falha na solicitação. Verifique se o ID do plano é válido.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedPlanId, onConfirm]);
-
+function ChangePlanDialog({ open, onOpenChange, onConfirm, selectedPlan, isLoading }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-md md:max-w-lg rounded-xl p-4 sm:p-6">
@@ -196,28 +111,26 @@ function ChangePlanDialog(props) {
           </DialogTitle>
           <DialogDescription className="text-sm sm:text-base text-gray-600 leading-relaxed">
             {selectedPlan
-              ? "Deseja solicitar a troca para o " +
-                selectedPlan +
-                "? Nossa equipe entrará em contato para confirmar a alteração em até 2 dias úteis."
-              : "Sua solicitação será enviada para nossa equipe. Entraremos em contato em até 2 dias úteis para apresentar as opções disponíveis e concluir a alteração."}
+              ? `Deseja solicitar a troca para o ${selectedPlan.name}? Nossa equipe entrará em contato para confirmar a alteração em até 2 dias úteis.`
+              : "Sua solicitação será enviada para nossa equipe."}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:gap-3 mt-4 sm:mt-6">
           <ButtonPlanos
             onClick={onConfirm}
             size="lg"
+            disabled={isLoading}
             className="w-full text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-            Enviar solicitação
+            {isLoading ? "Enviando..." : "Enviar solicitação"}
           </ButtonPlanos>
           <ButtonPlanos
-            onClick={function () {
-              onOpenChange(false);
-            }}
+            onClick={() => onOpenChange(false)}
             variant="outline"
             size="lg"
             className="w-full text-sm sm:text-base font-medium"
+            disabled={isLoading}
           >
             Cancelar
           </ButtonPlanos>
@@ -227,14 +140,24 @@ function ChangePlanDialog(props) {
   );
 }
 
+// --- Componente Principal ---
+
 const Meus_Planos = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedPlanName, setSelectedPlanName] = useState("");
-  const [toastVisible, setToastVisible] = useState(false);
-  const { isMobile, sidebarWidth } = useSidebar();
   
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [availablePlans, setAvailablePlans] = useState([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ title: "", desc: "", type: "success" });
+
+  const { isMobile, sidebarWidth } = useSidebar();
+
+  // Mock do plano atual (idealmente buscaria do back também)
   const currentPlan = {
+    id: 99,
     name: "Plano Mensal - 3x semana",
     price: "R$ 390,00/mês",
     frequency: "3 vezes por semana",
@@ -246,189 +169,95 @@ const Meus_Planos = () => {
     ],
   };
 
-  const availablePlans = [
-    {
-      id: "mensal-1x",
-      name: "Plano Mensal - 1x semana",
-      price: "R$ 210,00",
-      frequency: "1 vez por semana",
-      period: "por mês",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-      ],
-    },
-    {
-      id: "mensal-2x",
-      name: "Plano Mensal - 2x semana",
-      price: "R$ 310,00",
-      frequency: "2 vezes por semana",
-      period: "por mês",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-      ],
-    },
-    {
-      id: "mensal-3x",
-      name: "Plano Mensal - 3x semana",
-      price: "R$ 390,00",
-      frequency: "3 vezes por semana",
-      period: "por mês",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-      ],
-    },
-    {
-      id: "trimestral-1x",
-      name: "Plano Trimestral - 1x semana",
-      price: "3x R$ 185,00",
-      frequency: "1 vez por semana",
-      period: "a cada 3 meses",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-        "12% de desconto",
-      ],
-    },
-    {
-      id: "trimestral-2x",
-      name: "Plano Trimestral - 2x semana",
-      price: "3x R$ 285,00",
-      frequency: "2 vezes por semana",
-      period: "a cada 3 meses",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "8% de desconto",
-      ],
-    },
-    {
-      id: "trimestral-3x",
-      name: "Plano Trimestral - 3x semana",
-      price: "3x R$ 375,00",
-      frequency: "3 vezes por semana",
-      period: "a cada 3 meses",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "4% de desconto",
-        "1 aula particular inclusa",
-      ],
-    },
-    {
-      id: "semestral-1x",
-      name: "Plano Semestral - 1x semana",
-      price: "6x R$ 170,00",
-      frequency: "1 vez por semana",
-      period: "a cada 6 meses",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-        "19% de desconto",
-      ],
-    },
-    {
-      id: "semestral-2x",
-      name: "Plano Semestral - 2x semana",
-      price: "6x R$ 270,00",
-      frequency: "2 vezes por semana",
-      period: "a cada 6 meses",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "13% de desconto",
-        "1 aula particular inclusa",
-      ],
-    },
-    {
-      id: "semestral-3x",
-      name: "Plano Semestral - 3x semana",
-      price: "6x R$ 360,00",
-      frequency: "3 vezes por semana",
-      period: "a cada 6 meses",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "8% de desconto",
-        "2 aulas particulares inclusas",
-      ],
-    },
-    {
-      id: "anual-1x",
-      name: "Plano Anual - 1x semana",
-      price: "12x R$ 155,00",
-      frequency: "1 vez por semana",
-      period: "por ano",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-        "26% de desconto",
-      ],
-    },
-    {
-      id: "anual-2x",
-      name: "Plano Anual - 2x semana",
-      price: "12x R$ 255,00",
-      frequency: "2 vezes por semana",
-      period: "por ano",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "18% de desconto",
-        "2 aulas particulares inclusas",
-      ],
-    },
-    {
-      id: "anual-3x",
-      name: "Plano Anual - 3x semana",
-      price: "12x R$ 345,00",
-      frequency: "3 vezes por semana",
-      period: "por ano",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "12% de desconto",
-        "4 aulas particulares inclusas",
-        "Prioridade na reserva de horários",
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchPlanos = async () => {
+      try {
+        const response = await api.get('/planos/geral');
+        const plansMapped = response.data.map(p => ({
+            id: p.id_plano || p.id,
+            name: p.descricao_plano || p.nome || p.titulo,
+            price: `R$ ${p.valor_plano}`,
+            frequency: p.modalidade_plano || "Frequência a definir",
+            period: p.tipo_plano === 'padrao' ? 'por mês' : 'período definido',
+            benefits: [
+                `Aulas: ${p.qtde_aulas_totais || '?'}`,
+                "Acesso aos equipamentos"
+            ]
+        }));
+        setAvailablePlans(plansMapped);
+      } catch (error) {
+        console.error("Erro ao buscar planos:", error);
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    };
 
-  function handlePlanSelect(planName) {
-    setSelectedPlanName(planName);
+    fetchPlanos();
+  }, []);
+
+  const handlePlanSelect = (plan) => {
+    setSelectedPlan(plan);
     setDialogOpen(true);
-  }
+  };
 
-  function handleChangePlanRequest() {
-    setDialogOpen(false);
+  const handleChangePlanRequest = async () => {
+    if (!selectedPlan) return;
+
+    setIsSubmitting(true);
+
+    const payload = {
+        menssagem: `Quero trocar para o plano ${selectedPlan.name}`,
+        tipo_de_solicitacao: "plano",
+        acao_solicitacao_plano: "MUDANCA_PLANO",
+        acao_solicitacao_aula: null,
+        fk_id_aula_referencia: null,
+        data_sugerida: null,
+        fk_id_novo_plano: selectedPlan.id,
+        fk_id_novo_plano_personalizado: null
+    };
+
+    try {
+        // ROTA CONFIRMADA (com o erro de digitação do back-end)
+        await api.post('/solicitacao/createSolcicitacao', payload); 
+
+        showToast("Solicitação enviada com sucesso!", "Nossa equipe confirmará em breve.", "success");
+        setDialogOpen(false);
+        setSelectedPlan(null);
+
+    } catch (error) {
+        console.error("Erro na solicitação:", error);
+        
+        // Log detalhado para ver O QUE está errado no payload
+        if (error.response?.status === 400) {
+            console.log("Detalhes do erro 400:", error.response.data);
+            // Muitas vezes o FastAPI retorna o erro em 'detail'
+            if (error.response.data?.detail) {
+                console.log("Validação falhou em:", error.response.data.detail);
+            }
+        }
+
+        const errorDetail = error.response?.data?.detail || error.message || "Erro desconhecido";
+        
+        // Se o detalhe for um array (comum no FastAPI para erros de validação), formatamos
+        let displayError = errorDetail;
+        if (Array.isArray(errorDetail)) {
+            displayError = errorDetail.map(e => `${e.loc.join('.')} -> ${e.msg}`).join(' | ');
+        }
+
+        showToast("Erro na Solicitação", `(${error.response?.status}) ${displayError}`, "error");
+        
+        // Não fecha o modal no erro para permitir corrigir
+        // setDialogOpen(false); 
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const showToast = (title, desc, type) => {
+    setToastMessage({ title, desc, type });
     setToastVisible(true);
-    setTimeout(function () {
-      setToastVisible(false);
-    }, 4000);
-    setSelectedPlanName("");
-  }
+    setTimeout(() => setToastVisible(false), 4000);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -449,6 +278,7 @@ const Meus_Planos = () => {
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
           <div className="max-w-7xl mx-auto">
             <div className="space-y-6 sm:space-y-8">
+              
               <section className="space-y-3 sm:space-y-4">
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Plano Atual
@@ -465,10 +295,13 @@ const Meus_Planos = () => {
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Solicitar mudança de plano
                 </h2>
-                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                  {availablePlans.map(function (plan) {
-                    return (
-                      <PlanOptionCard
+                
+                {isLoadingPlans ? (
+                    <div className="text-center py-8 text-gray-500">Carregando planos disponíveis...</div>
+                ) : (
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    {availablePlans.map((plan) => (
+                        <PlanOptionCard
                         key={plan.id}
                         name={plan.name}
                         price={plan.price}
@@ -476,13 +309,11 @@ const Meus_Planos = () => {
                         frequency={plan.frequency}
                         benefits={plan.benefits}
                         isCurrentPlan={plan.name === currentPlan.name}
-                        onSelect={function () {
-                          handlePlanSelect(plan.name);
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+                        onSelect={() => handlePlanSelect(plan)}
+                        />
+                    ))}
+                    </div>
+                )}
               </section>
             </div>
           </div>
@@ -492,16 +323,17 @@ const Meus_Planos = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onConfirm={handleChangePlanRequest}
-          selectedPlan={selectedPlanName}
+          selectedPlan={selectedPlan}
+          isLoading={isSubmitting}
         />
 
         {toastVisible && (
-          <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg z-50 animate-in slide-in-from-bottom-5 max-w-[90vw] sm:max-w-md">
+          <div className={`fixed bottom-4 right-4 px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg z-50 animate-in slide-in-from-bottom-5 max-w-[90vw] sm:max-w-md text-white ${toastMessage.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
             <p className="font-semibold text-sm sm:text-base">
-              Solicitação enviada com sucesso!
+              {toastMessage.title}
             </p>
             <p className="text-xs sm:text-sm text-green-100 mt-1">
-              Nossa equipe confirmará em breve.
+              {toastMessage.desc}
             </p>
           </div>
         )}
