@@ -33,6 +33,7 @@ import FichaTecnica from "./pages/Admin/FichaTecnica";
 import Alertas from "./pages/Admin/Alertas";
 import Financas from "./pages/Admin/Financas";
 
+import DashboardInstrutor from "./pages/Instrutor/DashboardInstrutor";
 import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
 import AtestadoAluno from "./pages/Instrutor/AtestadoAluno";
 import AulasAluno from "./pages/Instrutor/AulasAluno";
@@ -91,6 +92,7 @@ function AppRoutes() {
             </SidebarProvider>
           }
         >
+          <Route path="dashboard" element={<DashboardInstrutor />} />
           <Route path="evolucao-aluno" element={<EvolucaoAluno />} />
 
           <Route path="aluno/:alunoId/atestados" element={<AtestadoAluno />} />

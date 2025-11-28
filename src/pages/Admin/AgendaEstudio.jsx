@@ -2,7 +2,7 @@ import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
-import { ChevronDown, Building, Plus, X, Pencil } from 'lucide-react'; // Adicionado ícone Pencil
+import { ChevronDown, Building, Plus, X, Pencil } from 'lucide-react';
 import api from '../../services/api';
 
 const STUDIO_MAP = {
@@ -80,7 +80,7 @@ const MonthYearSelector = ({
     );
 };
 
-const ClassCard = ({ id, title, date, teacher, studio, onEdit }) => {
+const ClassCard = ({ id, title, date, time, teacher, studio, onEdit }) => {
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const dateObj = new Date(dateString);
@@ -91,8 +91,7 @@ const ClassCard = ({ id, title, date, teacher, studio, onEdit }) => {
     };
 
     return (
-        <article className="bg-[#FEFEFE] border border-black rounded-lg shadow-sm p-4 text-center flex flex-col justify-between h-48 sm:h-52 relative group">
-            {/* Botão de Edição (Aparece no hover ou sempre visível em mobile) */}
+        <article className="bg-[#FEFEFE] border border-black rounded-lg shadow-sm p-4 text-center flex flex-col justify-between h-auto min-h-[200px] relative group">
             <button 
                 onClick={() => onEdit(id, title, teacher)}
                 className="absolute top-2 right-2 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors"
@@ -105,10 +104,14 @@ const ClassCard = ({ id, title, date, teacher, studio, onEdit }) => {
                 <h3 className="font-medium text-gray-900 leading-tight text-xl sm:text-2xl mb-2 line-clamp-2 pr-6">
                     {title}
                 </h3>
-                <p className="font-medium text-lg sm:text-xl text-[#67AF97] mb-1">
-                    Data: {formatDate(date)}
-                </p>
-                <p className="font-medium text-black text-base sm:text-lg line-clamp-1">
+                
+                {/* ADICIONADO: DATA E HORÁRIO NO MESMO BLOCO */}
+                <div className="font-medium text-lg sm:text-xl text-[#67AF97] mb-2">
+                    <p>{formatDate(date)}</p>
+                    <p>{time}</p> 
+                </div>
+
+                <p className="font-medium text-black text-base sm:text-lg line-clamp-1 mb-1">
                     {teacher}
                 </p>
                 <p className="font-medium text-black text-base sm:text-lg line-clamp-1">
@@ -125,24 +128,22 @@ export default function AgendaEstudio() {
 
     const [allClasses, setAllClasses] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [refreshKey, setRefreshKey] = useState(0); // Para forçar recarregamento
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [selectedStudio, setSelectedStudio] = useState('Todos');
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
     // --- ESTADOS PARA MODAIS E DADOS ---
-    const [isModalOpen, setIsModalOpen] = useState(false); // Criar Aula
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Editar Aula
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     
     const [instructors, setInstructors] = useState([]);
     const [students, setStudents] = useState([]);
     
-    // Estado para Edição
     const [editingClass, setEditingClass] = useState({ id: null, title: '', teacherName: '' });
     const [selectedInstructorForEdit, setSelectedInstructorForEdit] = useState("");
 
-    // Obtém data de hoje formatada
     const today = new Date().toISOString().split('T')[0];
 
     const [formData, setFormData] = useState({
@@ -157,7 +158,6 @@ export default function AgendaEstudio() {
         estudantes_selecionados: []
     });
 
-    // 1. Buscar Instrutores e Alunos
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -174,9 +174,6 @@ export default function AgendaEstudio() {
         fetchData();
     }, []);
 
-    // 2. Criar Mapa de Instrutores (ID Professor -> Nome Usuário)
-    // O backend retorna UserResponse, que tem 'name_user' e um objeto 'professor' com 'id_professor'.
-    // Precisamos mapear id_professor -> name_user para exibir corretamente nos cards.
     const instructorMap = useMemo(() => {
         const map = {};
         instructors.forEach(user => {
@@ -187,7 +184,6 @@ export default function AgendaEstudio() {
         return map;
     }, [instructors]);
 
-    // 3. Buscar Aulas
     useEffect(() => {
         const fetchClasses = async () => {
             setIsLoading(true);
@@ -219,7 +215,6 @@ export default function AgendaEstudio() {
     const handleYearChange = (e) => setCurrentYear(parseInt(e.target.value));
     const handleStudioChange = (studioId) => setSelectedStudio(studioId);
 
-    // --- FORMULÁRIO DE CRIAÇÃO ---
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -253,7 +248,6 @@ export default function AgendaEstudio() {
 
             const diaSemana = getDayOfWeekName(formData.data_aula);
             
-            // Calculo de data fim = data inicio + 1 dia (para validação do backend)
             const parts = formData.data_aula.split('-');
             const startDateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             const endDateObj = new Date(startDateObj);
@@ -282,7 +276,7 @@ export default function AgendaEstudio() {
 
             alert('Aula criada com sucesso!');
             setIsModalOpen(false);
-            setRefreshKey(prev => prev + 1); // Recarrega a lista
+            setRefreshKey(prev => prev + 1);
             setFormData({
                 titulo_aula: '', disciplina: '', data_aula: today, horario: '',
                 duracao_minutos: '60', fk_id_estudio: '', fk_id_professor: '',
@@ -295,10 +289,9 @@ export default function AgendaEstudio() {
         }
     };
 
-    // --- LÓGICA DE EDIÇÃO (ATRIBUIR INSTRUTOR) ---
     const openEditModal = (id, title, currentTeacherName) => {
         setEditingClass({ id, title, teacherName: currentTeacherName });
-        setSelectedInstructorForEdit(""); // Reseta seleção
+        setSelectedInstructorForEdit(""); 
         setIsEditModalOpen(true);
     };
 
@@ -310,8 +303,6 @@ export default function AgendaEstudio() {
         }
 
         try {
-            // Payload para PATCH /aulas/{id}
-            // O backend espera 'fk_id_professor' no corpo
             const payload = {
                 fk_id_professor: parseInt(selectedInstructorForEdit, 10)
             };
@@ -320,7 +311,7 @@ export default function AgendaEstudio() {
 
             alert("Instrutor atualizado com sucesso!");
             setIsEditModalOpen(false);
-            setRefreshKey(prev => prev + 1); // Atualiza a lista visualmente
+            setRefreshKey(prev => prev + 1); 
         } catch (error) {
             console.error("Erro ao atualizar instrutor:", error);
             const msg = error.response?.data?.detail || "Erro ao atualizar.";
@@ -328,22 +319,28 @@ export default function AgendaEstudio() {
         }
     };
 
-    // --- FILTRO E MAPEAMENTO ---
     const filteredAndMappedClasses = allClasses
         .filter(aula => {
             if (selectedStudio === 'Todos') return true;
             return aula.EstudioID == selectedStudio;
         })
         .map(aula => {
-            // Tenta obter o nome do professor pelo ID (professorResponsavel) usando o mapa criado
-            // Se não achar, mostra "Sem Instrutor" ou o ID cru
             const profId = aula.professorResponsavel;
             const profName = instructorMap[profId] || (profId ? `Instrutor ID: ${profId}` : "Sem Instrutor");
 
+            // Extrai o horário da data se disponível (formato ISO) ou usa um campo de horário se existir
+            let time = "00:00";
+            if (aula.dataAgendaAula && aula.dataAgendaAula.includes('T')) {
+                time = aula.dataAgendaAula.split('T')[1].substring(0, 5);
+            } else if (aula.horario_inicio) {
+                time = aula.horario_inicio;
+            }
+
             return {
-                id: aula.AulaID || aula._id, // Prioriza AulaID do SQL se disponível
+                id: aula.AulaID || aula._id,
                 title: aula.disciplina || aula.titulo_aula,
                 date: aula.dataAgendaAula,
+                time: time, // Adicionado aqui
                 teacher: profName,
                 studio: STUDIO_MAP[aula.EstudioID] || "Estúdio Desconhecido"
             };
@@ -408,9 +405,10 @@ export default function AgendaEstudio() {
                                                 id={c.id}
                                                 title={c.title}
                                                 date={c.date}
+                                                time={c.time} // Passando o horário
                                                 teacher={c.teacher}
                                                 studio={c.studio}
-                                                onEdit={openEditModal} // Passa função de abrir modal
+                                                onEdit={openEditModal}
                                             />
                                         ))
                                     ) : (

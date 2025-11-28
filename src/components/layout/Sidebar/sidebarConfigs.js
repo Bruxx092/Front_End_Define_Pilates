@@ -151,6 +151,11 @@ export const sidebarConfigs = {
 
   instrutor: {
     menuItems: [
+      { 
+        title: 'Dashboard',
+        icon: LayoutDashboard, 
+        path: '/instrutor/dashboard' 
+      },
       {
         title: "Minha Agenda",
         icon: Calendar,
