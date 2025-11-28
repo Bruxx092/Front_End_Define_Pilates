@@ -183,15 +183,6 @@ export default function Alertas() {
                                     {renderAlertList(planAlerts)}
                                 </div>
                             </div>
-
-                            <div className="bg-white rounded-lg shadow-lg flex flex-col p-4 sm:p-6 lg:p-8 w-full max-w-full lg:max-w-7xl mx-auto mt-8">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                                    Alertas de Reposição de Aula
-                                </h2>
-                                <div className="flex flex-col">
-                                    {renderAlertList(replacementAlerts)}
-                                </div>
-                            </div>
                         </>
                     )}
                 </main>
