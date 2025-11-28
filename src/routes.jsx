@@ -32,6 +32,7 @@ import ColaboradoresPage from "./pages/Admin/TelaColaboradores";
 import FichaTecnica from "./pages/Admin/FichaTecnica";
 import Alertas from "./pages/Admin/Alertas";
 import Financas from "./pages/Admin/Financas";
+import FichaAluno from "./pages/Admin/FichaTecnicaAluno";
 
 import DashboardInstrutor from "./pages/Instrutor/DashboardInstrutor";
 import EvolucaoAluno from "./pages/Instrutor/EvolucaoAluno";
@@ -100,6 +101,7 @@ function AppRoutes() {
           <Route path="aluno/:alunoId/fotos" element={<FotosAluno />} />
           <Route path="historico-presenca" element={<HistoricoPresenca />} />
           <Route path="registro-presenca" element={<RegistroPresenca />} />
+          <Route path="ficha-tecnica/:id" element={<FichaAluno />} />
           <Route
             path="estudantes-instrutor"
             element={<EstudantesInstrutor />}
@@ -129,6 +131,7 @@ function AppRoutes() {
           <Route path="selecao-plano" element={<PlanSelection />} />
           <Route path="matricular-aulas" element={<ClassEnrollment />} />
           <Route path="financas" element={<Financas />} />
+          <Route path="ficha/:id" element={<FichaAluno />} />
         </Route>
       </Routes>
     </Router>

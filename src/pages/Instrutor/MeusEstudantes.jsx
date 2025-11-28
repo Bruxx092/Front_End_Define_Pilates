@@ -25,11 +25,9 @@ export default function MeusEstudantes() {
       setLoading(true);
       setError(null);
       try {
-        // 1. Define intervalo para pegar histórico de aulas
         const startDate = format(subYears(new Date(), 2), 'yyyy-MM-dd');
         const endDate = format(addYears(new Date(), 1), 'yyyy-MM-dd');
 
-        // 2. Busca as aulas do instrutor
         const responseAulas = await api.get('/agenda/minhas_aulas', {
           params: { start_date: startDate, end_date: endDate }
         });
@@ -37,7 +35,6 @@ export default function MeusEstudantes() {
         const aulas = responseAulas.data;
         const uniqueStudentMap = new Map();
 
-        // 3. Coleta IDs únicos
         aulas.forEach((aula) => {
           const participantes = aula.participantes || aula.participantes_ids || [];
           
@@ -57,13 +54,9 @@ export default function MeusEstudantes() {
 
         let studentsList = Array.from(uniqueStudentMap.values());
 
-        // 4. Busca o NOME de cada aluno
         const enrichedStudents = await Promise.all(
           studentsList.map(async (student) => {
             try {
-              // CORREÇÃO AQUI:
-              // Enviamos o ID na URL (para bater com a rota) 
-              // E TAMBÉM nos params com o nome 'estudante_id' (para o backend ler corretamente)
               const responseName = await api.get(`/alunos/aluno-instrutor/${student.id}`, {
                 params: {
                   estudante_id: student.id 
@@ -88,7 +81,6 @@ export default function MeusEstudantes() {
           })
         );
         
-        // Ordena por nome alfabeticamente
         enrichedStudents.sort((a, b) => a.name.localeCompare(b.name));
         
         setStudents(enrichedStudents);
@@ -97,7 +89,7 @@ export default function MeusEstudantes() {
       } catch (err) {
         console.error("Erro ao buscar lista de alunos:", err);
         if (err.response && err.response.status === 403) {
-             setError("Sessão expirada. Por favor, faça login novamente.");
+             setError("Sessão expirada ou sem permissão. Tente recarregar.");
         } else {
              setError("Não foi possível carregar a lista de alunos.");
         }
@@ -138,8 +130,10 @@ export default function MeusEstudantes() {
   }, [students, searchTerm, modalityFilter, sortBy]);
 
   const handleViewTechnicalSheet = (student) => {
-    console.log(`Abrindo ficha técnica de: ${student.name} (ID: ${student.id})`);
-    // navigate(`/instrutor/ficha-tecnica/${student.id}`);
+    // Envia os dados do aluno via STATE para que a próxima tela não precise depender 100% da API que está falhando
+    navigate(`/instrutor/ficha-tecnica/${student.id}`, { 
+        state: { studentData: student } 
+    });
   };
 
   return (

@@ -3,6 +3,7 @@ import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import React, { useState, useRef, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
 import api from "@/services/api";
+import { useNavigate } from 'react-router-dom'; 
 
 export default function Estudantes() {
   const [students, setStudents] = useState([]);
@@ -18,27 +19,51 @@ export default function Estudantes() {
 
   const { isMobile, sidebarWidth } = useSidebar();
   const actionMenuRef = useRef(null);
+  const navigate = useNavigate();
 
   // Função para buscar todos os alunos
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      // Rota que lista todos os alunos (Requer perfil Admin/Colaborador)
       const response = await api.get('/alunos/');
       
+      console.log("Dados brutos da API (Verifique se 'estudante' existe):", response.data);
+
       const mappedStudents = response.data.map(user => {
-        // Tenta extrair o primeiro telefone se existir
         const phone = user.contatos && user.contatos.length > 0 
           ? user.contatos[0].numero_contato 
           : '-';
 
+        // --- LÓGICA ROBUSTA DE ID ---
+        // O Backend tem um bug: a rota /alunos/{id} espera o 'id_estudante' para funcionar (devido ao TargetUserFinder),
+        // mas o parametro chama user_id. Se enviarmos id_user, dá 404.
+        // Precisamos encontrar o id_estudante a todo custo.
+        
+        let validStudentId = null;
+
+        // 1. Tenta pegar dentro do objeto 'estudante' (Padrão esperado)
+        if (user.estudante && user.estudante.id_estudante) {
+            validStudentId = user.estudante.id_estudante;
+        }
+        // 2. Tenta pegar na raiz (caso a API retorne plano)
+        else if (user.id_estudante) {
+            validStudentId = user.id_estudante;
+        }
+        // 3. Tenta variações de caixa (Case Sensitive)
+        else if (user.Estudante && user.Estudante.id_estudante) {
+            validStudentId = user.Estudante.id_estudante;
+        }
+
+        if (!validStudentId) {
+            console.warn(`AVISO: Usuário ${user.name_user} (ID User: ${user.id_user}) não tem 'id_estudante' vinculado. A ficha técnica não abrirá.`);
+        }
+
         return {
-          id: user.id_user,
+          id: validStudentId, // ID do ESTUDANTE (para navegação da ficha)
+          userId: user.id_user, // ID do USUÁRIO (para exclusão)
           name: user.name_user,
           email: user.email_user,
           phone: phone,
-          // Modalidade/Status não vêm nessa rota, deixamos genérico ou oculto
-          // Se quiser, pode buscar contratos individualmente, mas pesaria a tela.
         };
       });
 
@@ -68,7 +93,6 @@ export default function Estudantes() {
   useEffect(() => {
     let result = students;
     
-    // Filtro por busca (Nome ou Email)
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(student => 
@@ -77,7 +101,6 @@ export default function Estudantes() {
       );
     }
     
-    // Ordenação
     if (sortBy) {
       result = [...result].sort((a, b) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -89,14 +112,13 @@ export default function Estudantes() {
     setFilteredStudents(result);
   }, [students, searchTerm, sortBy]);
 
-  // Função para abrir menu de ações
   const handleActionMenuOpen = (student, event) => {
     event.preventDefault();
     event.stopPropagation();
     
     const rect = event.currentTarget.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const menuHeight = 150; // Menu menor agora
+    const menuHeight = 150; 
     
     const yPosition = rect.bottom + menuHeight > viewportHeight ? 
       rect.top - menuHeight : rect.bottom;
@@ -105,13 +127,12 @@ export default function Estudantes() {
       isOpen: true,
       student,
       position: {
-        x: rect.left - 100, // Ajuste para alinhar à esquerda do botão
+        x: rect.left - 100, 
         y: yPosition
       }
     });
   };
 
-  // Fechar menu de ações ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
@@ -123,21 +144,19 @@ export default function Estudantes() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Função para abrir modal de exclusão
   const handleDeleteClick = (student) => {
     setDeleteModal({ isOpen: true, student });
     setActionMenu({ isOpen: false, student: null, position: { x: 0, y: 0 } });
   };
 
-  // Função para confirmar exclusão (Integração com Backend)
   const handleConfirmDelete = async () => {
     if (deleteModal.student) {
       try {
-        // Rota de exclusão de usuário: DELETE /users/{id}
-        await api.delete(`/users/${deleteModal.student.id}`);
+        // Usa userId para deletar o usuário
+        const idToDelete = deleteModal.student.userId;
+        await api.delete(`/users/${idToDelete}`);
         
-        // Atualiza a lista localmente
-        setStudents(prev => prev.filter(student => student.id !== deleteModal.student.id));
+        setStudents(prev => prev.filter(student => student.userId !== idToDelete));
         console.log(`Estudante ${deleteModal.student.name} excluído`);
       } catch (err) {
         console.error("Erro ao excluir estudante:", err);
@@ -147,16 +166,21 @@ export default function Estudantes() {
     setDeleteModal({ isOpen: false, student: null });
   };
 
-  // Função para visualizar ficha técnica
+  // Função para visualizar ficha técnica com validação
   const handleViewTechnicalSheet = (student) => {
-    console.log(`Visualizando ficha técnica de ${student.name}`);
-    // Implementar navegação real
-    // navigate(`/admin/estudantes/${student.id}`);
+    if (!student.id) {
+        // Alerta visual para o usuário entender por que não funciona
+        alert(`Não foi possível abrir a ficha técnica de "${student.name}".\n\nMotivo: O sistema não encontrou um ID de estudante vinculado a este usuário. Verifique se o cadastro foi concluído corretamente.`);
+        return;
+    }
+    
+    console.log(`Navegando para ficha: ID Estudante=${student.id} (User ID=${student.userId})`);
+    // Navega enviando o ID DE ESTUDANTE, que é o que o backend "TargetUserFinder" espera encontrar
+    navigate(`/admin/ficha/${student.id}`);
   };
 
   return (
     <div className="flex min-h-screen bg-[#F6F9FF] font-inter">
-      {/* Componente da Sidebar */}
       <SidebarUnificada
         menuItems={sidebarConfigs.administrador.menuItems}
         userInfo={sidebarConfigs.administrador.userInfo}
@@ -164,7 +188,6 @@ export default function Estudantes() {
         onOpenChange={setMenuOpen}
       />
 
-      {/* Container do conteúdo principal */}
       <div
         className="flex flex-col flex-1 transition-all duration-300 min-w-0"
         style={{
@@ -172,7 +195,6 @@ export default function Estudantes() {
           width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%",
         }}
       >
-        {/* Conteúdo específico da página Estudantes */}
         <main className="flex-1 flex items-center justify-center py-4 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
           <div className={`bg-white rounded-3xl shadow-lg ${isMobile ? 'w-full mx-auto p-4' : 'w-full max-w-7xl mx-auto p-8'}`}>
             
@@ -182,9 +204,7 @@ export default function Estudantes() {
                 Gerenciar Estudantes
               </h1>
               
-              {/* Barra de pesquisa e Filtros */}
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* Barra de pesquisa */}
                 <div className="relative">
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                     <svg className="w-4 h-4 text-[#313A4E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,7 +220,6 @@ export default function Estudantes() {
                   />
                 </div>
 
-                {/* Ordenar por */}
                 <div className="relative">
                   <select
                     value={sortBy}
@@ -220,7 +239,6 @@ export default function Estudantes() {
               </div>
             </div>
             
-            {/* Feedback de Erro */}
             {error && (
                 <div className="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
                     {error}
@@ -250,7 +268,7 @@ export default function Estudantes() {
               {/* Corpo da tabela */}
               <div className="bg-white">
                 {loading ? (
-                     <div className="text-center py-12">
+                      <div className="text-center py-12">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B668B]"></div>
                         <p className="mt-2 text-[#6B6F7B]">Carregando lista de estudantes...</p>
                     </div>
@@ -261,12 +279,11 @@ export default function Estudantes() {
                 ) : (
                   filteredStudents.map((student) => (
                     <div
-                      key={student.id}
+                      key={student.userId} // Use userId para key
                       className={`${isMobile ? 'flex flex-col gap-3 p-4' : 'grid grid-cols-12 gap-4 px-6 py-4'} items-center border-b border-[#F5F5F5] hover:bg-gray-50`}
                     >
                       {isMobile ? (
                         <>
-                          {/* Mobile Layout */}
                           <div className="flex justify-between items-center gap-4">
                             <span className="text-[#6B6F7B] font-medium flex-shrink-0">Nome:</span>
                             <span className="font-semibold text-[#313A4E] text-right truncate">
@@ -293,7 +310,8 @@ export default function Estudantes() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => handleViewTechnicalSheet(student)}
-                                    className="px-4 py-1 bg-[#2B668B] text-white text-sm rounded-full hover:bg-[#1e4d6b] transition-colors"
+                                    // Desabilita visualmente se não tiver ID, mas o clique trata o alerta
+                                    className={`px-4 py-1 text-white text-sm rounded-full transition-colors ${!student.id ? 'bg-gray-400' : 'bg-[#2B668B] hover:bg-[#1e4d6b]'}`}
                                 >
                                     Ficha
                                 </button>
@@ -302,7 +320,7 @@ export default function Estudantes() {
                                     className="p-2 text-[#313A4E] hover:bg-gray-100 rounded-lg transition-colors relative"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                     </svg>
                                 </button>
                             </div>
@@ -310,7 +328,6 @@ export default function Estudantes() {
                         </>
                       ) : (
                         <>
-                          {/* Desktop Layout */}
                           <div className="col-span-4">
                             <span className="font-semibold text-[#313A4E]">
                               {student.name}
@@ -332,7 +349,7 @@ export default function Estudantes() {
                           <div className="col-span-2 flex justify-end items-center gap-3">
                             <button
                                 onClick={() => handleViewTechnicalSheet(student)}
-                                className="text-[#2B668B] hover:underline text-sm font-medium"
+                                className={`text-sm font-medium ${!student.id ? 'text-gray-400' : 'text-[#2B668B] hover:underline'}`}
                             >
                                 Ficha Técnica
                             </button>
@@ -357,7 +374,6 @@ export default function Estudantes() {
         </main>
       </div>
 
-      {/* Menu de ações (três pontos) */}
       {actionMenu.isOpen && (
         <div
           ref={actionMenuRef}
@@ -378,7 +394,6 @@ export default function Estudantes() {
             Ações para {actionMenu.student?.name}
           </div>
           
-          {/* Visualizar Ficha */}
           <button
             onClick={() => {
                 handleViewTechnicalSheet(actionMenu.student);
@@ -389,7 +404,6 @@ export default function Estudantes() {
             Visualizar Ficha Técnica
           </button>
 
-          {/* Excluir - Apenas isso pois o backend suporta delete */}
           <button
             onClick={() => handleDeleteClick(actionMenu.student)}
             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors border-t border-gray-100 mt-1"
@@ -399,7 +413,6 @@ export default function Estudantes() {
         </div>
       )}
 
-      {/* Modal de confirmação de exclusão */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
