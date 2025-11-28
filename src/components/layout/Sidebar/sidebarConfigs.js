@@ -9,7 +9,6 @@ import {
   Phone,
   CheckSquare,
   FileText,
-  LineChart,
   Users,
   Receipt,
   TrendingUp,
@@ -128,11 +127,6 @@ export const sidebarConfigs = {
         path: "/aluno/minhas-aulas",
       },
       {
-        title: "Minha Evolução",
-        icon: LineChart,
-        path: "/aluno/minha-evolucao",
-      },
-      {
         title: "Meus Planos",
         icon: CreditCard,
         path: "/aluno/planos",
@@ -170,11 +164,6 @@ export const sidebarConfigs = {
         title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
         path: "/instrutor/registro-presenca",
-      },
-      {
-        title: "Fichas de Evolução",
-        icon: FileText,
-        path: "/instrutor/Evolucao-Aluno",
       },
     ],
     userInfo: {

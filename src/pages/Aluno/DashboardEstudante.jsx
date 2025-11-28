@@ -8,11 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  Award,
   AlertCircle,
   CheckCircle,
-  DollarSign,
-  LineChart,
   Receipt,
   FileText,
   Eye,
@@ -21,6 +18,7 @@ import {
 } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
 import Sidebar from "@/components/layout/Sidebar/SidebarUnificada";
+import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs"; // Importando a config global
 import { useNavigate } from "react-router-dom";
 
 const DashboardEstudante = () => {
@@ -36,20 +34,13 @@ const DashboardEstudante = () => {
     paddingBottom: "2rem",
   };
 
-  const menuItems = [
-    { title: "Dashboard", icon: TrendingUp, path: "/aluno/dashboard" },
-    { title: "Minhas Aulas", icon: Calendar, path: "/aluno/minhas-aulas" },
-    { title: "Minha Evolução", icon: LineChart, path: "/aluno/minha-evolucao" },
-    { title: "Meus Planos", icon: CreditCard, path: "/aluno/planos" },
-    { title: "Minhas Faturas", icon: Receipt, path: "/aluno/faturas" },
-  ];
+  // REMOVIDO: const menuItems = [...] (estava hardcoded aqui)
+  // REMOVIDO: const evolution = [...] (dados não utilizados mais)
 
-  const userInfo = {
-    name: "Maria Silva",
-    email: "aluno@gmail.com",
-  };
-
-  const studentName = "Maria Silva";
+  // Você pode manter os dados do usuário fixos ou pegar da API, 
+  // mas para a sidebar vamos usar a config global.
+  const studentName = "Maria Silva"; 
+  
   const nextClass = {
     day: "Hoje",
     time: "14:00",
@@ -122,27 +113,6 @@ const DashboardEstudante = () => {
     },
   ];
 
-  const evolution = [
-    {
-      date: "15/10/2025",
-      instructor: "Prof. João Santos",
-      note: "Excelente progresso na postura! Continue focando na respiração durante os exercícios.",
-      photos: 2,
-    },
-    {
-      date: "01/10/2025",
-      instructor: "Profa. Ana Costa",
-      note: "Maior flexibilidade observada. Parabéns pelo empenho!",
-      photos: 1,
-    },
-    {
-      date: "15/09/2025",
-      instructor: "Prof. João Santos",
-      note: "Início do acompanhamento. Foco em fortalecer o core e melhorar equilíbrio.",
-      photos: 3,
-    },
-  ];
-
   const getStatusColor = (status) => {
     switch (status) {
       case "ativo":
@@ -159,8 +129,9 @@ const DashboardEstudante = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
-        menuItems={menuItems}
-        userInfo={userInfo}
+        // CORREÇÃO: Usando a configuração global do Aluno
+        menuItems={sidebarConfigs.aluno.menuItems}
+        userInfo={sidebarConfigs.aluno.userInfo} 
         isOpen={isSidebarOpen}
         onOpenChange={setIsSidebarOpen}
       />
@@ -228,7 +199,7 @@ const DashboardEstudante = () => {
           <div className="flex justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {[
               { id: "agenda", label: "Agenda", icon: Calendar },
-              { id: "evolucao", label: "Evolução", icon: TrendingUp },
+              // REMOVIDO: Aba de Evolução
               { id: "planos", label: "Planos", icon: CreditCard },
               { id: "faturas", label: "Faturas", icon: Receipt },
             ].map((tab) => {
@@ -320,7 +291,6 @@ const DashboardEstudante = () => {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-gray-600">
-                            <Award size={16} />
                             <span className="text-sm sm:text-base">
                               {item.studio}
                             </span>
@@ -334,58 +304,7 @@ const DashboardEstudante = () => {
             </div>
           )}
 
-          {activeTab === "evolucao" && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                Minha Evolução
-              </h2>
-              <div className="space-y-4">
-                {evolution.map((item, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                        style={{ backgroundColor: "#406882" }}
-                      >
-                        <TrendingUp size={24} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-base font-semibold text-gray-500">
-                            {item.date}
-                          </span>
-                          {item.photos > 0 && (
-                            <button
-                              onClick={() =>
-                                navigate("/aluno/minha-evolucao/fotos")
-                              }
-                              className="text-sm px-3 py-1 rounded-full text-white hover:opacity-90 transition-opacity flex items-center gap-2"
-                              style={{ backgroundColor: "#1A5276" }}
-                            >
-                              <span>
-                                {item.photos}{" "}
-                                {item.photos === 1 ? "foto" : "fotos"}
-                              </span>
-                              <ChevronRight size={16} />
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-base text-gray-600 mb-2">
-                          {item.instructor}
-                        </p>
-                        <p className="text-lg text-gray-800 leading-relaxed">
-                          {item.note}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* REMOVIDO: Bloco {activeTab === "evolucao" && (...)} */}
 
           {activeTab === "planos" && (
             <div className="space-y-4">
