@@ -2,161 +2,92 @@ import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import React, { useState, useRef, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
-
-// Dados de exemplo dos estudantes
-const sampleStudents = [
-  { 
-    id: 1, 
-    name: 'João Oliveira Silva', 
-    modality: 'Yoga', 
-    status: 'Ativo',
-    course: 'Curso Completo de Yoga',
-    lastPayment: '2024-01-15'
-  },
-  { 
-    id: 2, 
-    name: 'Maria Eduarda Santos', 
-    modality: 'Pilates', 
-    status: 'Inativo',
-    course: 'Pilates Básico',
-    lastPayment: '2023-12-10'
-  },
-  { 
-    id: 3, 
-    name: 'Pedro Carvalho Silva', 
-    modality: 'Curso', 
-    status: 'Ativo',
-    course: 'Curso de Meditação',
-    lastPayment: '2024-01-20'
-  },
-  { 
-    id: 4, 
-    name: 'Gabriel Marques da Silva', 
-    modality: 'Yoga', 
-    status: 'Ativo',
-    course: 'Yoga Avançado',
-    lastPayment: '2024-01-18'
-  },
-  { 
-    id: 5, 
-    name: 'Allan Martins Silva', 
-    modality: 'Pilates', 
-    status: 'Pagamento em atraso',
-    course: 'Pilates Intermediário',
-    lastPayment: '2023-11-30'
-  },
-  { 
-    id: 6, 
-    name: 'Ana Carolina Lima', 
-    modality: 'Yoga', 
-    status: 'Ativo',
-    course: 'Yoga para Iniciantes',
-    lastPayment: '2024-01-22'
-  },
-  { 
-    id: 7, 
-    name: 'Ana Lima', 
-    modality: 'Curso', 
-    status: 'Ativo',
-    course: 'Yoga para Iniciantes',
-    lastPayment: '2024-01-22'
-  },
-  { 
-    id: 8, 
-    name: 'Carlos Eduardo Rocha', 
-    modality: 'Pilates', 
-    status: 'Ativo',
-    course: 'Pilates Avançado',
-    lastPayment: '2024-01-25'
-  },
-  { 
-    id: 9, 
-    name: 'Fernanda Costa Oliveira', 
-    modality: 'Yoga', 
-    status: 'Inativo',
-    course: 'Yoga Terapêutico',
-    lastPayment: '2023-12-15'
-  },
-  { 
-    id: 10, 
-    name: 'Rafael Souza Santos', 
-    modality: 'Curso', 
-    status: 'Pagamento em atraso',
-    course: 'Curso de Alongamento',
-    lastPayment: '2023-11-20'
-  },
-  { 
-    id: 11, 
-    name: 'Juliana Almeida Pereira', 
-    modality: 'Pilates', 
-    status: 'Ativo',
-    course: 'Pilates para Gestantes',
-    lastPayment: '2024-01-28'
-  },
-  { 
-    id: 12, 
-    name: 'Roberto Nunes Lima', 
-    modality: 'Yoga', 
-    status: 'Ativo',
-    course: 'Yoga para Idosos',
-    lastPayment: '2024-01-30'
-  }
-];
+import api from "@/services/api";
 
 export default function Estudantes() {
-  const [students, setStudents] = useState(sampleStudents);
-  const [filteredStudents, setFilteredStudents] = useState(sampleStudents);
+  const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [modalityFilter, setModalityFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, student: null });
   const [actionMenu, setActionMenu] = useState({ isOpen: false, student: null, position: { x: 0, y: 0 } });
-  const [customModality, setCustomModality] = useState('');
   
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const { isMobile, sidebarWidth } = useSidebar();
-  const tableRef = useRef(null);
   const actionMenuRef = useRef(null);
+
+  // Função para buscar todos os alunos
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      // Rota que lista todos os alunos (Requer perfil Admin/Colaborador)
+      const response = await api.get('/alunos/');
+      
+      const mappedStudents = response.data.map(user => {
+        // Tenta extrair o primeiro telefone se existir
+        const phone = user.contatos && user.contatos.length > 0 
+          ? user.contatos[0].numero_contato 
+          : '-';
+
+        return {
+          id: user.id_user,
+          name: user.name_user,
+          email: user.email_user,
+          phone: phone,
+          // Modalidade/Status não vêm nessa rota, deixamos genérico ou oculto
+          // Se quiser, pode buscar contratos individualmente, mas pesaria a tela.
+        };
+      });
+
+      // Ordenação inicial por nome
+      mappedStudents.sort((a, b) => a.name.localeCompare(b.name));
+
+      setStudents(mappedStudents);
+      setFilteredStudents(mappedStudents);
+      setError(null);
+    } catch (err) {
+      console.error("Erro ao buscar estudantes:", err);
+      if (err.response && err.response.status === 403) {
+        setError("Sem permissão para listar estudantes.");
+      } else {
+        setError("Erro ao carregar a lista de estudantes.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
 
   // Filtros e busca
   useEffect(() => {
     let result = students;
     
-    // Filtro por busca
+    // Filtro por busca (Nome ou Email)
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(student => 
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.modality.toLowerCase().includes(searchTerm.toLowerCase())
+        student.name.toLowerCase().includes(term) ||
+        (student.email && student.email.toLowerCase().includes(term))
       );
-    }
-    
-    // Filtro por status
-    if (statusFilter) {
-      result = result.filter(student => student.status === statusFilter);
-    }
-    
-    // Filtro por modalidade
-    if (modalityFilter) {
-      result = result.filter(student => student.modality === modalityFilter);
     }
     
     // Ordenação
     if (sortBy) {
       result = [...result].sort((a, b) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name);
-        if (sortBy === 'modality') return a.modality.localeCompare(b.modality);
-        if (sortBy === 'status') return a.status.localeCompare(b.status);
+        if (sortBy === 'email') return (a.email || '').localeCompare(b.email || '');
         return 0;
       });
     }
     
     setFilteredStudents(result);
-  }, [students, searchTerm, statusFilter, modalityFilter, sortBy]);
-
-  // Status options
-  const statusOptions = ['Ativo', 'Inativo', 'Pagamento em atraso'];
+  }, [students, searchTerm, sortBy]);
 
   // Função para abrir menu de ações
   const handleActionMenuOpen = (student, event) => {
@@ -165,7 +96,7 @@ export default function Estudantes() {
     
     const rect = event.currentTarget.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const menuHeight = 280;
+    const menuHeight = 150; // Menu menor agora
     
     const yPosition = rect.bottom + menuHeight > viewportHeight ? 
       rect.top - menuHeight : rect.bottom;
@@ -174,11 +105,10 @@ export default function Estudantes() {
       isOpen: true,
       student,
       position: {
-        x: rect.left,
+        x: rect.left - 100, // Ajuste para alinhar à esquerda do botão
         y: yPosition
       }
     });
-    setCustomModality(''); // Limpa o campo quando abre o menu
   };
 
   // Fechar menu de ações ao clicar fora
@@ -193,40 +123,26 @@ export default function Estudantes() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Função para alterar status
-  const handleStatusChange = (studentId, newStatus) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentId ? { ...student, status: newStatus } : student
-    ));
-    setActionMenu({ isOpen: false, student: null, position: { x: 0, y: 0 } });
-  };
-
-  // Função para alterar modalidade
-  const handleModalityChange = (studentId, newModality) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentId ? { ...student, modality: newModality } : student
-    ));
-    setActionMenu({ isOpen: false, student: null, position: { x: 0, y: 0 } });
-  };
-
-  // Função para aplicar modalidade customizada
-  const handleCustomModality = () => {
-    if (customModality.trim() && actionMenu.student) {
-      handleModalityChange(actionMenu.student.id, customModality.trim());
-    }
-  };
-
   // Função para abrir modal de exclusão
   const handleDeleteClick = (student) => {
     setDeleteModal({ isOpen: true, student });
     setActionMenu({ isOpen: false, student: null, position: { x: 0, y: 0 } });
   };
 
-  // Função para confirmar exclusão
-  const handleConfirmDelete = () => {
+  // Função para confirmar exclusão (Integração com Backend)
+  const handleConfirmDelete = async () => {
     if (deleteModal.student) {
-      setStudents(prev => prev.filter(student => student.id !== deleteModal.student.id));
-      console.log(`Estudante ${deleteModal.student.name} excluído`);
+      try {
+        // Rota de exclusão de usuário: DELETE /users/{id}
+        await api.delete(`/users/${deleteModal.student.id}`);
+        
+        // Atualiza a lista localmente
+        setStudents(prev => prev.filter(student => student.id !== deleteModal.student.id));
+        console.log(`Estudante ${deleteModal.student.name} excluído`);
+      } catch (err) {
+        console.error("Erro ao excluir estudante:", err);
+        alert("Erro ao excluir estudante. Verifique se ele possui pendências.");
+      }
     }
     setDeleteModal({ isOpen: false, student: null });
   };
@@ -234,26 +150,8 @@ export default function Estudantes() {
   // Função para visualizar ficha técnica
   const handleViewTechnicalSheet = (student) => {
     console.log(`Visualizando ficha técnica de ${student.name}`);
-  };
-
-  // Obter cor do status
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Ativo': return '#17E383';
-      case 'Inativo': return '#AFAFAF';
-      case 'Pagamento em atraso': return '#FF4848';
-      default: return '#313A4E';
-    }
-  };
-
-  // Obter cor da borda do status
-  const getStatusBorderColor = (status) => {
-    switch (status) {
-      case 'Ativo': return '#17E383';
-      case 'Inativo': return '#AFAFAF';
-      case 'Pagamento em atraso': return '#FF4848';
-      default: return '#313A4E';
-    }
+    // Implementar navegação real
+    // navigate(`/admin/estudantes/${student.id}`);
   };
 
   return (
@@ -281,7 +179,7 @@ export default function Estudantes() {
             {/* Cabeçalho */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 lg:mb-8">
               <h1 className={`font-bold text-[#111111] ${isMobile ? 'text-2xl mb-4' : 'text-[28px]'}`}>
-                Estudantes
+                Gerenciar Estudantes
               </h1>
               
               {/* Barra de pesquisa e Filtros */}
@@ -295,49 +193,11 @@ export default function Estudantes() {
                   </div>
                   <input
                     type="text"
-                    placeholder="Pesquisar por..."
+                    placeholder="Buscar por nome ou email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full sm:w-60 pl-10 pr-4 py-2 border border-[#E1E1E1] rounded-lg bg-white text-[#313A4E] placeholder-[#313A4E] focus:outline-none focus:ring-2 focus:ring-[#2B668B] focus:border-transparent"
                   />
-                </div>
-
-                {/* Filtro por modalidade */}
-                <div className="relative">
-                  <select
-                    value={modalityFilter}
-                    onChange={(e) => setModalityFilter(e.target.value)}
-                    className="w-full sm:w-64 pl-4 pr-10 py-2 border border-[#E1E1E1] rounded-lg bg-white text-[#313A4E] focus:outline-none focus:ring-2 focus:ring-[#2B668B] focus:border-transparent appearance-none"
-                  >
-                    <option value="">Filtrar por modalidade</option>
-                    <option value="Yoga">Yoga</option>
-                    <option value="Pilates">Pilates</option>
-                    <option value="Curso">Curso</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <svg className="w-4 h-4 text-[#313A4E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Filtro por status */}
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full sm:w-40 pl-4 pr-10 py-2 border border-[#E1E1E1] rounded-lg bg-white text-[#313A4E] focus:outline-none focus:ring-2 focus:ring-[#2B668B] focus:border-transparent appearance-none"
-                  >
-                    <option value="">Status</option>
-                    {statusOptions.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <svg className="w-4 h-4 text-[#313A4E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
                 </div>
 
                 {/* Ordenar por */}
@@ -349,8 +209,7 @@ export default function Estudantes() {
                   >
                     <option value="">Ordenar por...</option>
                     <option value="name">Nome</option>
-                    <option value="modality">Modalidade</option>
-                    <option value="status">Status</option>
+                    <option value="email">Email</option>
                   </select>
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                     <svg className="w-4 h-4 text-[#313A4E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,38 +219,47 @@ export default function Estudantes() {
                 </div>
               </div>
             </div>
+            
+            {/* Feedback de Erro */}
+            {error && (
+                <div className="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                    {error}
+                </div>
+            )}
 
             {/* Tabela de estudantes */}
             <div className="overflow-hidden">
-{/* Cabeçalho da tabela - apenas desktop */}
-{!isMobile && (
-  <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-[#F4F4F4] rounded-t-3xl bg-white">
-    <div className="col-span-4">
-      <span className="text-[18px] text-[#6B6F7B] font-medium">Nome</span>
-    </div>
-    <div className="col-span-2">
-      <span className="text-[18px] text-[#6B6F7B] font-medium">Modalidade</span>
-    </div>
-    <div className="col-span-2">
-      <span className="text-[18px] text-[#6B6F7B] font-medium">Status</span>
-    </div>
-    <div className="col-span-2 flex items-center ml-16">
-      <span className="text-[18px] text-[#6B6F7B] font-medium">Ficha Técnica</span>
-    </div>
-    <div className="col-span-2 text-right">
-      <span className="text-[18px] text-[#6B6F7B] font-medium">Ações</span>
-    </div>
-  </div>
-)}
+              {/* Cabeçalho da tabela - apenas desktop */}
+              {!isMobile && (
+                <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-[#F4F4F4] rounded-t-3xl bg-white">
+                  <div className="col-span-4">
+                    <span className="text-[18px] text-[#6B6F7B] font-medium">Nome</span>
+                  </div>
+                  <div className="col-span-4">
+                    <span className="text-[18px] text-[#6B6F7B] font-medium">Email</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[18px] text-[#6B6F7B] font-medium">Telefone</span>
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <span className="text-[18px] text-[#6B6F7B] font-medium">Ações</span>
+                  </div>
+                </div>
+              )}
 
               {/* Corpo da tabela */}
               <div className="bg-white">
-                {filteredStudents.length === 0 ? (
+                {loading ? (
+                     <div className="text-center py-12">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B668B]"></div>
+                        <p className="mt-2 text-[#6B6F7B]">Carregando lista de estudantes...</p>
+                    </div>
+                ) : filteredStudents.length === 0 ? (
                   <div className="text-center py-8 text-[#6B6F7B]">
                     Nenhum estudante encontrado
                   </div>
                 ) : (
-                  filteredStudents.map((student, index) => (
+                  filteredStudents.map((student) => (
                     <div
                       key={student.id}
                       className={`${isMobile ? 'flex flex-col gap-3 p-4' : 'grid grid-cols-12 gap-4 px-6 py-4'} items-center border-b border-[#F5F5F5] hover:bg-gray-50`}
@@ -407,103 +275,77 @@ export default function Estudantes() {
                           </div>
 
                           <div className="flex justify-between items-center gap-4">
-                            <span className="text-[#6B6F7B] font-medium flex-shrink-0">Modalidade:</span>
-                            <span className="font-semibold text-[#313A4E] text-right">
-                              {student.modality}
+                            <span className="text-[#6B6F7B] font-medium flex-shrink-0">Email:</span>
+                            <span className="text-[#313A4E] text-right text-sm break-all">
+                              {student.email}
                             </span>
                           </div>
 
                           <div className="flex justify-between items-center gap-4">
-                            <span className="text-[#6B6F7B] font-medium flex-shrink-0">Status:</span>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded-full border-4 flex-shrink-0"
-                                style={{ borderColor: getStatusBorderColor(student.status) }}
-                              />
-                              <span 
-                                className="font-medium whitespace-nowrap"
-                                style={{ color: getStatusColor(student.status) }}
-                              >
-                                {student.status}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <span className="text-[#6B6F7B] font-medium">Ficha Técnica:</span>
-                            <button
-                              onClick={() => handleViewTechnicalSheet(student)}
-                              className="px-4 py-1 bg-[#2B668B] text-white text-[16px] font-semibold rounded-full hover:bg-[#1e4d6b] transition-colors w-fit"
-                            >
-                              Visualizar
-                            </button>
+                            <span className="text-[#6B6F7B] font-medium flex-shrink-0">Telefone:</span>
+                            <span className="text-[#313A4E] text-right">
+                              {student.phone}
+                            </span>
                           </div>
 
                           <div className="flex justify-between items-center gap-4">
                             <span className="text-[#6B6F7B] font-medium flex-shrink-0">Ações:</span>
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={(e) => handleActionMenuOpen(student, e)}
-                                className="p-2 text-[#313A4E] hover:bg-gray-100 rounded-lg transition-colors relative"
-                                title="Mais opções"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                </svg>
-                              </button>
+                                <button
+                                    onClick={() => handleViewTechnicalSheet(student)}
+                                    className="px-4 py-1 bg-[#2B668B] text-white text-sm rounded-full hover:bg-[#1e4d6b] transition-colors"
+                                >
+                                    Ficha
+                                </button>
+                                <button
+                                    onClick={(e) => handleActionMenuOpen(student, e)}
+                                    className="p-2 text-[#313A4E] hover:bg-gray-100 rounded-lg transition-colors relative"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                    </svg>
+                                </button>
                             </div>
                           </div>
                         </>
                       ) : (
                         <>
-{/* Desktop Layout */}
-<div className="col-span-4">
-  <span className="font-semibold text-[#313A4E]">
-    {student.name}
-  </span>
-</div>
+                          {/* Desktop Layout */}
+                          <div className="col-span-4">
+                            <span className="font-semibold text-[#313A4E]">
+                              {student.name}
+                            </span>
+                          </div>
 
-<div className="col-span-2">
-  <span className="font-semibold text-[#313A4E]">
-    {student.modality}
-  </span>
-</div>
+                          <div className="col-span-4">
+                            <span className="text-[#6B6F7B] text-sm">
+                              {student.email}
+                            </span>
+                          </div>
 
-<div className="col-span-2 flex items-center">
-  <div className="flex items-center gap-2">
-    <div 
-      className="w-4 h-4 rounded-full border-4 flex-shrink-0"
-      style={{ borderColor: getStatusBorderColor(student.status) }}
-    />
-    <span 
-      className="font-medium whitespace-nowrap"
-      style={{ color: getStatusColor(student.status) }}
-    >
-      {student.status}
-    </span>
-  </div>
-</div>
+                          <div className="col-span-2">
+                             <span className="text-[#6B6F7B]">
+                                {student.phone}
+                             </span>
+                          </div>
 
-<div className="col-span-2 flex items-center ml-16">
-  <button
-    onClick={() => handleViewTechnicalSheet(student)}
-    className="px-6 py-1 bg-[#2B668B] text-white text-[16px] font-semibold rounded-full hover:bg-[#1e4d6b] transition-colors"
-  >
-    Visualizar
-  </button>
-</div>
-
-<div className="col-span-2 flex justify-end items-center">
-  <button
-    onClick={(e) => handleActionMenuOpen(student, e)}
-    className="p-2 text-[#313A4E] hover:bg-gray-100 rounded-lg transition-colors relative"
-    title="Mais opções"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-    </svg>
-  </button>
-</div>
+                          <div className="col-span-2 flex justify-end items-center gap-3">
+                            <button
+                                onClick={() => handleViewTechnicalSheet(student)}
+                                className="text-[#2B668B] hover:underline text-sm font-medium"
+                            >
+                                Ficha Técnica
+                            </button>
+                            <button
+                              onClick={(e) => handleActionMenuOpen(student, e)}
+                              className="p-2 text-[#313A4E] hover:bg-gray-100 rounded-lg transition-colors relative"
+                              title="Mais opções"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                              </svg>
+                            </button>
+                          </div>
                         </>
                       )}
                     </div>
@@ -528,67 +370,29 @@ export default function Estudantes() {
             !isMobile ? {
               left: `${actionMenu.position.x}px`,
               top: `${actionMenu.position.y}px`,
-              transform: 'translateX(-100%)'
+              transform: 'translateX(-50%)'
             } : {}
           }
         >
-          {/* Alterar Status */}
           <div className="px-4 py-2 text-sm font-bold text-gray-700 border-b border-gray-100">
-            Alterar Status
-          </div>
-          {statusOptions.map(status => (
-            <button
-              key={status}
-              onClick={() => handleStatusChange(actionMenu.student.id, status)}
-              className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              {status}
-            </button>
-          ))}
-          
-          {/* Alterar Modalidade */}
-          <div className="px-4 py-2 text-sm font-bold text-gray-700 border-b border-gray-100 mt-2">
-            Alterar Modalidade
-          </div>
-          <div className="px-4 py-2">
-            <input
-              type="text"
-              placeholder="Digite a modalidade..."
-              value={customModality}
-              onChange={(e) => setCustomModality(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B668B] focus:border-transparent"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleCustomModality();
-                }
-              }}
-            />
-            <button
-              onClick={handleCustomModality}
-              className="w-full mt-2 px-3 py-2 bg-[#2B668B] text-white text-sm rounded-lg hover:bg-[#1e4d6b] transition-colors"
-            >
-              Aplicar Modalidade
-            </button>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {['Yoga', 'Pilates', 'Curso', 'Alongamento', 'Meditação'].map(modality => (
-                <button
-                  key={modality}
-                  onClick={() => handleModalityChange(actionMenu.student.id, modality)}
-                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                >
-                  {modality}
-                </button>
-              ))}
-            </div>
+            Ações para {actionMenu.student?.name}
           </div>
           
-          {/* Excluir */}
-          <div className="px-4 py-2 text-sm font-bold text-gray-700 border-b border-gray-100 mt-2">
-            Ações
-          </div>
+          {/* Visualizar Ficha */}
+          <button
+            onClick={() => {
+                handleViewTechnicalSheet(actionMenu.student);
+                setActionMenu({ ...actionMenu, isOpen: false });
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Visualizar Ficha Técnica
+          </button>
+
+          {/* Excluir - Apenas isso pois o backend suporta delete */}
           <button
             onClick={() => handleDeleteClick(actionMenu.student)}
-            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors"
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors border-t border-gray-100 mt-1"
           >
             Excluir Estudante
           </button>
@@ -603,7 +407,8 @@ export default function Estudantes() {
               Confirmar Exclusão
             </h3>
             <p className="text-gray-600 mb-6">
-              Tem certeza que deseja excluir o estudante <strong>{deleteModal.student?.name}</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o estudante <strong>{deleteModal.student?.name}</strong>? <br/>
+              Esta ação removerá o acesso do aluno e todos os seus dados.
             </p>
             <div className="flex justify-end gap-3">
               <button

@@ -19,86 +19,88 @@ export default function MeusEstudantes() {
   const { isMobile, sidebarWidth } = useSidebar();
   const navigate = useNavigate();
 
-  // Função para buscar os alunos do instrutor através da agenda
+  // Função para buscar os alunos do instrutor
   useEffect(() => {
     const fetchMyStudents = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Intervalo estendido para garantir que pegamos todas as aulas
-        const startDate = format(subYears(new Date(), 5), 'yyyy-MM-dd');
-        const endDate = format(addYears(new Date(), 5), 'yyyy-MM-dd');
+        // 1. Define intervalo para pegar histórico de aulas
+        const startDate = format(subYears(new Date(), 2), 'yyyy-MM-dd');
+        const endDate = format(addYears(new Date(), 1), 'yyyy-MM-dd');
 
-        console.log(`Buscando aulas entre ${startDate} e ${endDate}`);
-
-        // 1. Buscar TODAS as aulas do instrutor
+        // 2. Busca as aulas do instrutor
         const responseAulas = await api.get('/agenda/minhas_aulas', {
-          params: {
-            start_date: startDate,
-            end_date: endDate
-          }
+          params: { start_date: startDate, end_date: endDate }
         });
 
         const aulas = responseAulas.data;
         const uniqueStudentMap = new Map();
 
-        // 2. Processar cada aula
-        await Promise.all(aulas.map(async (aula) => {
-          // Verifica se há participantes (pode vir como 'participantes' ou 'participantes_ids')
-          const participantesIds = aula.participantes || aula.participantes_ids || [];
-
-          if (participantesIds.length > 0) {
-            let detalhesAlunos = [];
-            
-            try {
-              const classDate = aula.dataAgendaAula.split('T')[0]; 
-              // Tenta buscar detalhes adicionais (AgendaAluno)
-              const responseDetalhes = await api.get(`/agenda/detalhes_alunos/${aula.AulaID}`, {
-                params: { class_date: classDate }
-              });
-              detalhesAlunos = responseDetalhes.data || [];
-            } catch (err) {
-              console.warn(`Aviso: Não foi possível buscar detalhes extras para a aula ${aula.AulaID}`);
-            }
-
-            // 3. Cruzar dados: Usamos os IDs da aula como fonte da verdade
-            participantesIds.forEach(studentId => {
-              // Tenta achar o detalhe específico desse aluno na resposta do endpoint de detalhes
-              const detalheEncontrado = detalhesAlunos.find(d => d.EstudanteID === studentId);
-
+        // 3. Coleta IDs únicos
+        aulas.forEach((aula) => {
+          const participantes = aula.participantes || aula.participantes_ids || [];
+          
+          if (Array.isArray(participantes)) {
+            participantes.forEach((studentId) => {
               if (!uniqueStudentMap.has(studentId)) {
-                // Tenta extrair o nome de onde for possível, ou usa o ID como fallback
-                // O backend atual para instrutores NÃO envia o nome do aluno por padrão, então usamos o ID.
-                const studentName = detalheEncontrado?.nome_estudante || 
-                                    detalheEncontrado?.EstudanteNome || 
-                                    `Estudante #${studentId}`; 
-                
-                const studentModality = detalheEncontrado?.disciplina || aula.disciplina || 'Geral';
-                
                 uniqueStudentMap.set(studentId, {
                   id: studentId,
-                  name: studentName, 
-                  modality: studentModality, 
-                  // Flag para saber se veio do detalhe ou apenas do ID
-                  hasDetails: !!detalheEncontrado 
+                  name: `Carregando...`, 
+                  modality: aula.disciplina || 'Geral',
+                  lastClassDate: aula.dataAgendaAula 
                 });
               }
             });
           }
-        }));
+        });
 
-        const studentsList = Array.from(uniqueStudentMap.values());
+        let studentsList = Array.from(uniqueStudentMap.values());
+
+        // 4. Busca o NOME de cada aluno
+        const enrichedStudents = await Promise.all(
+          studentsList.map(async (student) => {
+            try {
+              // CORREÇÃO AQUI:
+              // Enviamos o ID na URL (para bater com a rota) 
+              // E TAMBÉM nos params com o nome 'estudante_id' (para o backend ler corretamente)
+              const responseName = await api.get(`/alunos/aluno-instrutor/${student.id}`, {
+                params: {
+                  estudante_id: student.id 
+                }
+              });
+              
+              if (responseName.data && responseName.data.name_user) {
+                return {
+                  ...student,
+                  name: responseName.data.name_user, 
+                  photo: responseName.data.foto_user
+                };
+              }
+            } catch (err) {
+              console.warn(`Não foi possível obter nome para o ID ${student.id}`, err);
+              return {
+                ...student,
+                name: `Estudante #${student.id}`
+              };
+            }
+            return student;
+          })
+        );
         
-        // Ordenação padrão
-        studentsList.sort((a, b) => a.name.localeCompare(b.name));
+        // Ordena por nome alfabeticamente
+        enrichedStudents.sort((a, b) => a.name.localeCompare(b.name));
         
-        console.log("Lista final de estudantes processada:", studentsList);
-        setStudents(studentsList);
-        setFilteredStudents(studentsList);
+        setStudents(enrichedStudents);
+        setFilteredStudents(enrichedStudents);
 
       } catch (err) {
-        console.error("Erro ao processar lista de alunos:", err);
-        setError("Não foi possível carregar a lista. Tente recarregar a página.");
+        console.error("Erro ao buscar lista de alunos:", err);
+        if (err.response && err.response.status === 403) {
+             setError("Sessão expirada. Por favor, faça login novamente.");
+        } else {
+             setError("Não foi possível carregar a lista de alunos.");
+        }
       } finally {
         setLoading(false);
       }
@@ -112,10 +114,11 @@ export default function MeusEstudantes() {
     let result = students;
     
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(student => 
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.modality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(student.id).includes(searchTerm) // Permite buscar por ID também
+        student.name.toLowerCase().includes(term) ||
+        student.modality.toLowerCase().includes(term) ||
+        String(student.id).includes(term)
       );
     }
     
@@ -135,7 +138,7 @@ export default function MeusEstudantes() {
   }, [students, searchTerm, modalityFilter, sortBy]);
 
   const handleViewTechnicalSheet = (student) => {
-    console.log(`Visualizando ficha técnica: ${student.name} (ID: ${student.id})`);
+    console.log(`Abrindo ficha técnica de: ${student.name} (ID: ${student.id})`);
     // navigate(`/instrutor/ficha-tecnica/${student.id}`);
   };
 
@@ -173,7 +176,7 @@ export default function MeusEstudantes() {
                   </div>
                   <input
                     type="text"
-                    placeholder="Pesquisar por nome ou ID..."
+                    placeholder="Buscar por nome..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full sm:w-60 pl-10 pr-4 py-2 border border-[#E1E1E1] rounded-lg bg-white text-[#313A4E] placeholder-[#313A4E] focus:outline-none focus:ring-2 focus:ring-[#2B668B] focus:border-transparent"
@@ -232,7 +235,7 @@ export default function MeusEstudantes() {
               {!isMobile && (
                 <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-[#F4F4F4] rounded-t-3xl bg-white">
                   <div className="col-span-6">
-                    <span className="text-[18px] text-[#6B6F7B] font-medium">Nome / ID</span>
+                    <span className="text-[18px] text-[#6B6F7B] font-medium">Nome</span>
                   </div>
                   <div className="col-span-3">
                     <span className="text-[18px] text-[#6B6F7B] font-medium">Modalidade</span>
@@ -251,7 +254,7 @@ export default function MeusEstudantes() {
                   </div>
                 ) : filteredStudents.length === 0 ? (
                   <div className="text-center py-8 text-[#6B6F7B]">
-                    Nenhum estudante encontrado em suas aulas (verifique se há aulas agendadas com participantes).
+                    Nenhum estudante encontrado em suas aulas recentes.
                   </div>
                 ) : (
                   filteredStudents.map((student) => (
@@ -276,12 +279,11 @@ export default function MeusEstudantes() {
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            <span className="text-[#6B6F7B] font-medium">Ficha Técnica:</span>
                             <button
                               onClick={() => handleViewTechnicalSheet(student)}
                               className="px-4 py-1 bg-[#2B668B] text-white text-[16px] font-semibold rounded-full hover:bg-[#1e4d6b] transition-colors w-fit"
                             >
-                              Visualizar
+                              Ver Ficha
                             </button>
                           </div>
                         </>
@@ -304,7 +306,7 @@ export default function MeusEstudantes() {
                               onClick={() => handleViewTechnicalSheet(student)}
                               className="px-6 py-1 bg-[#2B668B] text-white text-[16px] font-semibold rounded-full hover:bg-[#1e4d6b] transition-colors"
                             >
-                              Visualizar
+                              Ver Ficha
                             </button>
                           </div>
                         </>
