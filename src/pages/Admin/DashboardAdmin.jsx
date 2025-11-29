@@ -176,6 +176,29 @@ export default function DashboardAdmin() {
   const [activeAlertTab, setActiveAlertTab] = useState("planos");
   const [alertProcessing, setAlertProcessing] = useState(null);
 
+// 1. Defina o valor inicial de segurança baseado em sidebarConfigs
+const defaultUserInfo = sidebarConfigs.administrador.userInfo; 
+const [userInfo, setUserInfo] = useState(defaultUserInfo);
+
+// 2. Busque os dados reais na API
+useEffect(() => {
+  const fetchUserData = async () => {
+    try {
+      const response = await api.get("/users/me");
+      // ATUALIZA o estado com os dados do backend
+      setUserInfo({
+        name: response.data.name_user || response.data.nome, // Campo do backend
+        email: response.data.email_user || response.data.email, // Campo do backend
+      });
+    } catch (error) {
+      // Se falhar, ele usa o valor inicial estático (defaultUserInfo)
+      console.error("Falha ao carregar dados do usuário:", error);
+    }
+  };
+
+  fetchUserData();
+}, []); // CORREÇÃO: Não esqueça o array de dependências vazio!
+
   // States for data
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -348,7 +371,7 @@ export default function DashboardAdmin() {
     <div className="flex min-h-screen bg-gray-50 pt-0">
       <SidebarUnificada
         menuItems={sidebarConfigs.administrador.menuItems}
-        userInfo={sidebarConfigs.administrador.userInfo}
+        userInfo={userInfo}
         isOpen={menuOpen}
         onOpenChange={setMenuOpen}
       />

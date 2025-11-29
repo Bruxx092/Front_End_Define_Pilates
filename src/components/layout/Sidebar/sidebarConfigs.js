@@ -78,11 +78,6 @@ export const sidebarConfigs = {
         path: "/admmaster/agenda",
       },
       {
-        title: "Painel Geral dos Alunos",
-        icon: LayoutDashboard,
-        path: "/admmaster/painel-alunos",
-      },
-      {
         title: "Finanças",
         icon: DollarSign,
         path: "/admmaster/financas",
@@ -101,11 +96,6 @@ export const sidebarConfigs = {
         title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
         path: "/admmaster/registro-faltas",
-      },
-      {
-        title: "Fichas de Evolução",
-        icon: FileText,
-        path: "/admmaster/fichas-evolucao",
       },
     ],
     userInfo: {
@@ -131,11 +121,6 @@ export const sidebarConfigs = {
         icon: CreditCard,
         path: "/aluno/planos",
       },
-      {
-        title: "Minhas Faturas",
-        icon: Receipt,
-        path: "/aluno/faturas",
-      },
     ],
     userInfo: {
       name: "Aluno",
@@ -159,11 +144,6 @@ export const sidebarConfigs = {
         title: "Meus Alunos",
         icon: Users,
         path: "/instrutor/estudantes-instrutor",
-      },
-      {
-        title: "Registro de Faltas / Presenças",
-        icon: CheckSquare,
-        path: "/instrutor/registro-presenca",
       },
     ],
     userInfo: {

@@ -13,6 +13,14 @@ const EvolucaoModal = ({ isOpen, onClose, aula, onSave }) => {
   const [files, setFiles] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
+
+
+  const handleFileChange = (e) => {
+    setFiles(Array.from(e.target.files));
+  };
+
+
+
   useEffect(() => {
     if (aula) {
       setStatus(aula.StatusPresenca || 'Agendada');
@@ -93,6 +101,17 @@ const EvolucaoModal = ({ isOpen, onClose, aula, onSave }) => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B668B] outline-none resize-none"
             />
           </div>
+          <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Anexar Fotos de Evolução</label>
+                <input 
+                  type="file" 
+                  multiple 
+                  onChange={handleFileChange} 
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2B668B] file:text-white hover:file:bg-[#1e4d6b] cursor-pointer"
+                  accept="image/*" 
+                />
+                <p className="mt-2 text-sm text-gray-500">{files.length} arquivo(s) selecionado(s).</p>
+            </div>
 
           <div className="flex justify-end gap-3 mt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
