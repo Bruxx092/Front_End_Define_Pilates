@@ -9,7 +9,6 @@ import {
   Phone,
   CheckSquare,
   FileText,
-  LineChart,
   Users,
   Receipt,
   TrendingUp,
@@ -79,11 +78,6 @@ export const sidebarConfigs = {
         path: "/admmaster/agenda",
       },
       {
-        title: "Painel Geral dos Alunos",
-        icon: LayoutDashboard,
-        path: "/admmaster/painel-alunos",
-      },
-      {
         title: "Finanças",
         icon: DollarSign,
         path: "/admmaster/financas",
@@ -102,11 +96,6 @@ export const sidebarConfigs = {
         title: "Registro de Faltas / Presenças",
         icon: CheckSquare,
         path: "/admmaster/registro-faltas",
-      },
-      {
-        title: "Fichas de Evolução",
-        icon: FileText,
-        path: "/admmaster/fichas-evolucao",
       },
     ],
     userInfo: {
@@ -128,19 +117,9 @@ export const sidebarConfigs = {
         path: "/aluno/minhas-aulas",
       },
       {
-        title: "Minha Evolução",
-        icon: LineChart,
-        path: "/aluno/minha-evolucao",
-      },
-      {
         title: "Meus Planos",
         icon: CreditCard,
         path: "/aluno/planos",
-      },
-      {
-        title: "Minhas Faturas",
-        icon: Receipt,
-        path: "/aluno/faturas",
       },
     ],
     userInfo: {
@@ -151,6 +130,11 @@ export const sidebarConfigs = {
 
   instrutor: {
     menuItems: [
+      { 
+        title: 'Dashboard',
+        icon: LayoutDashboard, 
+        path: '/instrutor/dashboard' 
+      },
       {
         title: "Minha Agenda",
         icon: Calendar,
@@ -160,16 +144,6 @@ export const sidebarConfigs = {
         title: "Meus Alunos",
         icon: Users,
         path: "/instrutor/estudantes-instrutor",
-      },
-      {
-        title: "Registro de Faltas / Presenças",
-        icon: CheckSquare,
-        path: "/instrutor/registro-presenca",
-      },
-      {
-        title: "Fichas de Evolução",
-        icon: FileText,
-        path: "/instrutor/Evolucao-Aluno",
       },
     ],
     userInfo: {

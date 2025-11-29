@@ -2,19 +2,9 @@ import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import React, { useState, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Bell } from 'lucide-react';
+import { alertasService } from '@/services/alertasServices';
 
-const MOCK_PLAN_ALERTS = [
-  { id: 1, type: 'plan', text: 'Roberta quer renovar para plano x' },
-  { id: 2, type: 'plan', text: 'Márcio quer renovar para plano x' },
-];
-
-const MOCK_REPLACEMENT_ALERTS = [
-  { id: 1, type: 'replacement', text: 'Pablo quer repor aula no dia 21/07' },
-  { id: 2, type: 'replacement', text: 'Felipe quer repor aula no dia 25/07' },
-];
-
-// --- Componente Reutilizável para cada Alerta ---
 const AlertItem = ({ alert, onShowConfirm }) => {
     return (
         <div className="flex items-center justify-between py-4 border-b border-gray-200 last:border-b-0">
@@ -37,7 +27,6 @@ const AlertItem = ({ alert, onShowConfirm }) => {
     );
 };
 
-// --- Componente do Modal de Confirmação ---
 const ConfirmationModal = ({ modalState, onCancel, onConfirm }) => {
     if (!modalState) return null;
 
@@ -82,97 +71,65 @@ const ConfirmationModal = ({ modalState, onCancel, onConfirm }) => {
     );
 };
 
-
-// --- Componente Principal da Página ---
 export default function Alertas() {
     const [menuOpen, setMenuOpen] = useState(false);
     const { isMobile, sidebarWidth } = useSidebar();
     
-    // Estados para os dados
     const [planAlerts, setPlanAlerts] = useState([]);
     const [replacementAlerts, setReplacementAlerts] = useState([]);
     
-    // Estado de carregamento
     const [isLoading, setIsLoading] = useState(true);
+    const [modalState, setModalState] = useState(null); 
 
-    // Estado para o modal
-    const [modalState, setModalState] = useState(null); // { action: 'accept' | 'reject', alert: {...} }
-
-    // --- PREPARAÇÃO PARA O BACKEND (FETCHING) ---
     useEffect(() => {
-        const fetchAlerts = () => {
+        const fetchAlerts = async () => {
             setIsLoading(true);
-            
-            // AQUI TERÁ A LÓGICA DE CHAMADA DOS DADOS DO BACK-END
-            setTimeout(() => {
-                setPlanAlerts(MOCK_PLAN_ALERTS);
-                setReplacementAlerts(MOCK_REPLACEMENT_ALERTS);
+            try {
+                const data = await alertasService.getAlerts();
+                setPlanAlerts(data.planAlerts);
+                setReplacementAlerts(data.replacementAlerts);
+            } catch (error) {
+                console.error("Erro ao carregar alertas:", error);
+            } finally {
                 setIsLoading(false);
-            }, 1000); 
+            }
         };
 
         fetchAlerts();
     }, []);
 
-    const handleAcceptPlan = (alertId) => {
-        console.log(`(API STUB) Aceitando alerta de plano ${alertId}`);
-        // No futuro:
-        // try {
-        //   await api.post('/alertas/plano/aceitar', { id: alertId });
-        //   setPlanAlerts(alerts => alerts.filter(a => a.id !== alertId));
-        // } catch (error) { ... }
-        setPlanAlerts(alerts => alerts.filter(a => a.id !== alertId));
-    };
+    const handleAction = async (action, alert) => {
+        if (alert.type === 'plano') {
+            setPlanAlerts(prev => prev.filter(a => a.id !== alert.id));
+        } else {
+            setReplacementAlerts(prev => prev.filter(a => a.id !== alert.id));
+        }
 
-    const handleRejectPlan = (alertId) => {
-        console.log(`(API STUB) Recusando alerta de plano ${alertId}`);
-        // No futuro:
-        // await api.post('/alertas/plano/recusar', { id: alertId });
-        setPlanAlerts(alerts => alerts.filter(a => a.id !== alertId));
-    };
-
-    // Stubs de API para Ações de Reposição
-    const handleAcceptReplacement = (alertId) => {
-        console.log(`(API STUB) Aceitando alerta de reposição ${alertId}`);
-        // No futuro:
-        // await api.post('/alertas/reposicao/aceitar', { id: alertId });
-        setReplacementAlerts(alerts => alerts.filter(a => a.id !== alertId));
-    };
-
-    const handleRejectReplacement = (alertId) => {
-        console.log(`(API STUB) Recusando alerta de reposição ${alertId}`);
-        // No futuro:
-        // await api.post('/alertas/reposicao/recusar', { id: alertId });
-        setReplacementAlerts(alerts => alerts.filter(a => a.id !== alertId));
+        try {
+            if (action === 'accept') {
+                await alertasService.acceptAlert(alert.id, alert.type);
+            } else {
+                await alertasService.rejectAlert(alert.id, alert.type);
+            }
+        } catch (error) {
+            console.error(`Erro ao ${action} alerta:`, error);
+            window.location.reload();
+        }
     };
     
-    // --- LÓGICA DO MODAL ---
-    
-    // 1. Mostra o modal
     const handleShowConfirm = (action, alert) => {
         setModalState({ action, alert });
     };
 
-    // 2. Fecha o modal
     const handleCancel = () => {
         setModalState(null);
     };
 
-    // 3. Executa a ação e fecha o modal
     const handleConfirm = () => {
         if (!modalState) return;
-        
         const { action, alert } = modalState;
         
-        // Chama a função de API correta
-        if (alert.type === 'plan') {
-            if (action === 'accept') handleAcceptPlan(alert.id);
-            if (action === 'reject') handleRejectPlan(alert.id);
-        } else if (alert.type === 'replacement') {
-            if (action === 'accept') handleAcceptReplacement(alert.id);
-            if (action === 'reject') handleRejectReplacement(alert.id);
-        }
-        
+        handleAction(action, alert);
         setModalState(null);
     };
     
@@ -207,11 +164,12 @@ export default function Alertas() {
             >
                 <main className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8">
                     
-                        <div className="mb-6 text-center">
-                            <h2 className="font-semibold text-gray-900 text-2xl sm:text-3xl lg:text-4xl">
-                                Alertas e Avisos
-                            </h2>
-                        </div>
+                    <div className="flex items-center gap-3 mb-6">
+                        <Bell className="text-gray-900" size={32} />
+                        <h1 className="font-semibold text-gray-900 text-2xl sm:text-3xl lg:text-4xl">
+                            Alertas e Avisos
+                        </h1>
+                    </div>
 
                     {isLoading ? (
                         <p className="text-gray-600 text-lg">Carregando alertas...</p>
@@ -223,15 +181,6 @@ export default function Alertas() {
                                 </h2>
                                 <div className="flex flex-col">
                                     {renderAlertList(planAlerts)}
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow-lg flex flex-col p-4 sm:p-6 lg:p-8 w-full max-w-full lg:max-w-7xl mx-auto mt-8">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                                    Alertas de Reposição de Aula
-                                </h2>
-                                <div className="flex flex-col">
-                                    {renderAlertList(replacementAlerts)}
                                 </div>
                             </div>
                         </>

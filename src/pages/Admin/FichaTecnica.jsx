@@ -1,202 +1,192 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Edit, Save, X, Plus, Trash2, AlertCircle } from "lucide-react";
-// --- API FUTURA: Descomente para usar ---
-// import axios from "axios";
+import { Edit, Save, X, Plus, Trash2, AlertCircle, MapPin, Phone, User, Calendar } from "lucide-react";
+import axios from "axios"; 
 
-// Alterne para 'false' para usar a API real
-const USE_MOCKS = true;
+// =======================================================================
+// CONFIGURAÇÃO
+// =======================================================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE || "";
+const API_BASE_URL = "";
+
 const ENDPOINTS = {
-  COLABORADOR_POR_ID: (id) => `/api/colaboradores/${id}`,
+  COLABORADOR_GET: (id) => `/colaboradore/${id}`,
+  COLABORADOR_UPDATE: (id) => `/colaboradore/colaboradores/${id}`,
 };
 
-// --- MOCK: "Banco de dados" de Colaboradores ---
-const MOCK_COLABORADORES_DB = {
-  "1": {
-    id: 1,
-    nome: "Ana Souza",
-    cargo: "Admin", // 'Admin' ou 'Recepcionista'
-    email: "ana.souza@admin.com",
-    telefone: "(11) 91234-5678",
-    estudio: "Itaquera",
-    dataAdmissao: "2023-03-15", // Formato ISO para <input type="date">
-    status: "Ativo", // 'Ativo' ou 'Inativo'
-    permissoes: [
-      "Gerenciamento de Agendas",
-      "Controle Financeiro",
-      "Cadastro de Alunos e Colaboradores",
-    ],
-    foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-  },
-  "2": {
-    id: 2,
-    nome: "Carlos Souza",
-    cargo: "Recepcionista",
-    email: "carlos@recepcao.com",
-    telefone: "(11) 98765-4321",
-    estudio: "São Miguel",
-    dataAdmissao: "2024-01-10",
-    status: "Ativo",
-    permissoes: [
-      "Gerenciamento de Agendas",
-      "Cadastro de Alunos",
-    ],
-    foto: "https://cdn-icons-png.flaticon.com/512/847/847969.png", // Usando foto genérica
-  },
-  // Adicione outros mocks conforme o ID
-};
-/**
- * --- API FUTURA: Obtém o token de autenticação ---
- */
-const getToken = () => {
-  return localStorage.getItem("token");
+const getToken = () => localStorage.getItem("accessToken");
+
+const formatarDataParaInput = (dataISO) => {
+  if (!dataISO) return "";
+  return dataISO.split('T')[0]; 
 };
 
-/**
- * Busca os dados de UM colaborador pelo ID.
- */
+// =======================================================================
+// INTEGRAÇÃO (BACK-END)
+// =======================================================================
+
 const apiFetchColaborador = async (id) => {
-  if (USE_MOCKS) {
-    await new Promise(res => setTimeout(res, 500));
-    const data = MOCK_COLABORADORES_DB[id];
-    if (data) return data;
-    throw new Error("Colaborador não encontrado (mock).");
+  try {
+    const token = getToken();
+    if (!token) throw new Error("LOGIN_REQUIRED");
+
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+    const response = await axios.get(`${API_BASE_URL}${ENDPOINTS.COLABORADOR_GET(id)}`, config);
+    
+    return response.data;
+
+  } catch (err) {
+    if (err.message === "LOGIN_REQUIRED") throw new Error("Usuário não autenticado.");
+    if (err.response && err.response.status === 401) throw new Error("Sessão expirada.");
+    throw new Error("Erro ao carregar dados.");
   }
-  
-  // --- API REAL ---
-  // const token = getToken();
-  // const { data } = await axios.get(
-  //   `${API_BASE_URL}${ENDPOINTS.COLABORADOR_POR_ID(id)}`,
-  //   { headers: { Authorization: `Bearer ${token}` } }
-  // );
-  // return data;
-  
-  throw new Error("API real não implementada.");
 };
 
-/**
- * Salva (PUT) os dados de um colaborador.
- */
-const apiSaveColaborador = async (id, payload) => {
-  if (USE_MOCKS) {
-    await new Promise(res => setTimeout(res, 1000));
-    console.log("MOCK SAVE [Payload]:", payload);
-    // Atualiza o mock em memória
-    MOCK_COLABORADORES_DB[id] = { ...MOCK_COLABORADORES_DB[id], ...payload };
-    return { success: true, data: payload };
-  }
+const apiSaveColaborador = async (id, formState, dadosOriginais) => {
+  try {
+    const token = getToken();
+    if (!token) throw new Error("LOGIN_REQUIRED");
 
-  // --- API REAL ---
-  // const token = getToken();
-  // const { data } = await axios.put(
-  //   `${API_BASE_URL}${ENDPOINTS.COLABORADOR_POR_ID(id)}`,
-  //   payload,
-  //   { headers: { Authorization: `Bearer ${token}` } }
-  // );
-  // return data;
-  
-  throw new Error("API real não implementada.");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    // 1. LOGICA DE CARGO
+    const isRecepcionista = formState.cargo === "Recepcionista";
+
+    // 2. LOGICA DE CONTATOS
+    let listaContatos = [];
+    if (formState.telefone) {
+        const idContatoOriginal = dadosOriginais?.contatos?.[0]?.id_contato;
+        listaContatos.push({
+            id_contato: idContatoOriginal, 
+            tipo_contato: formState.tipoTelefone || "residencial", 
+            numero_contato: formState.telefone
+        });
+    }
+
+    // 3. LOGICA DE ENDEREÇO
+    let listaEnderecos = [];
+    if (formState.endereco) {
+        const idEnderecoOriginal = dadosOriginais?.endereco?.[0]?.id_endereco;
+        listaEnderecos.push({
+            id_endereco: idEnderecoOriginal,
+            tipo_endereco: formState.tipoEndereco || "residencial",
+            endereco: formState.endereco,
+            cep: formState.cep
+        });
+    }
+
+    // 4. PACOTE FINAL
+    const payload = {
+        name_user: formState.nome,
+        email_user: formState.email,
+        is_recepcionista: isRecepcionista,
+        contatos: listaContatos.length > 0 ? listaContatos : undefined,
+        endereco: listaEnderecos.length > 0 ? listaEnderecos : undefined,
+        senha_user: formState.novaSenha ? formState.novaSenha : undefined
+    };
+
+    const response = await axios.patch(
+      `${API_BASE_URL}${ENDPOINTS.COLABORADOR_UPDATE(id)}`,
+      payload,
+      config
+    );
+    return response.data;
+
+  } catch (err) {
+    if (err.response && err.response.status === 422) {
+        console.log("Erro 422:", err.response.data);
+        throw new Error("Dados inválidos.");
+    }
+    throw new Error("Não foi possível salvar as alterações.");
+  }
 };
 
-const EditableField = ({ label, value, name, onChange, isEditing, type = "text", options = null }) => {
+// =======================================================================
+// COMPONENTES VISUAIS
+// =======================================================================
+
+const EditableField = ({ label, value, name, onChange, isEditing, type = "text", options = null, placeholder="", icon: Icon }) => {
   return (
-    <div>
-      <p className="text-sm text-gray-500">{label}</p>
+    <div className="w-full">
+      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1 ml-1 flex items-center gap-1">
+        {Icon && <Icon size={12} />} {label}
+      </label>
+      
       {isEditing ? (
         type === "select" ? (
-          <select
-            name={name}
-            value={value}
-            onChange={onChange}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-          >
-            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
+          <div className="relative">
+            <select name={name} value={value || ""} onChange={onChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-teal-500 outline-none bg-white appearance-none">
+              {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
         ) : (
-          <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={onChange}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
-          />
+          <input type={type} name={name} value={value || ""} onChange={onChange} placeholder={placeholder} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
         )
       ) : (
-        <p className="font-medium text-gray-800 break-words">
-          {type === 'date' ? (value ? new Date(value + 'T00:00:00').toLocaleDateString('pt-BR') : '—') : value || '—'}
-        </p>
-      )}
-    </div>
-  );
-};
-
-const EditableList = ({ label, items, name, onUpdate, onAdd, onRemove, isEditing }) => {
-  return (
-    <div>
-      <h3 className="font-semibold text-gray-800 mb-2">{label}</h3>
-      {isEditing ? (
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                value={item}
-                onChange={(e) => onUpdate(name, index, e.target.value)}
-                className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm"
-                placeholder="Descreva a permissão..."
-              />
-              <button
-                onClick={() => onRemove(name, index)}
-                className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
-                aria-label="Remover item"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={() => onAdd(name)}
-            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-          >
-            <Plus size={16} /> Adicionar Permissão
-          </button>
+        <div className="p-2 bg-gray-50 rounded-lg border border-gray-100 text-gray-800 min-h-[42px] flex items-center">
+           {type === 'date' && value ? new Date(value).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : (type === 'password' ? '••••••••' : value || <span className="text-gray-400 italic">Não informado</span>)}
         </div>
-      ) : (
-        <ul className="list-disc pl-6 text-gray-700 space-y-1">
-          {items.length > 0 ? (
-            items.map((item, index) => <li key={index}>{item}</li>)
-          ) : (
-            <li className="italic text-gray-500">Nenhuma permissão definida.</li>
-          )}
-        </ul>
       )}
     </div>
   );
 };
 
+// =======================================================================
+// TELA PRINCIPAL
+// =======================================================================
 export default function FichaColaborador() {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  const [colaborador, setColaborador] = useState(null); // Dados originais
-  const [formState, setFormState] = useState(null); // Dados em edição
+  const [colaboradorDadosOriginais, setColaboradorDadosOriginais] = useState(null); 
+  const [formState, setFormState] = useState(null); 
   const [editMode, setEditMode] = useState(false);
-  
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Busca os dados do colaborador ao carregar
   useEffect(() => {
-    const fetchDados = async (colaboradorId) => {
+    const fetchDados = async () => {
       setIsLoading(true);
-      setError(null);
       try {
-        const data = await apiFetchColaborador(colaboradorId);
-        setColaborador(data);
-        setFormState(data);
+        const data = await apiFetchColaborador(id);
+        setColaboradorDadosOriginais(data);
+
+        // Mapeamento
+        let tel = "", tipoTel = "residencial";
+        if (data.contatos?.[0]) {
+            tel = data.contatos[0].numero_contato;
+            tipoTel = data.contatos[0].tipo_contato;
+        }
+
+        let end = "", cep = "", tipoEnd = "residencial";
+        if (data.endereco?.[0]) {
+            end = data.endereco[0].endereco;
+            cep = data.endereco[0].cep;
+            tipoEnd = data.endereco[0].tipo_endereco;
+        }
+
+        let cargo = "Colaborador";
+        if (data.recepcionista) cargo = "Recepcionista";
+        if (data.lv_acesso === "supremo") cargo = "Supremo";
+
+        setFormState({
+            nome: data.name_user,
+            nascimento: formatarDataParaInput(data.nasc_user),
+            cpf: data.num_doc_user,
+            email: data.email_user,
+            cargo: cargo,
+            telefone: tel,
+            tipoTelefone: tipoTel,
+            estudio: "Estúdio Itaquera", 
+            endereco: end,
+            cep: cep,
+            tipoEndereco: tipoEnd,
+            novaSenha: "",
+            foto: data.foto_user || "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+        });
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -204,215 +194,103 @@ export default function FichaColaborador() {
       }
     };
     
-    if (id) {
-      fetchDados(id);
-    }
+    if (id) fetchDados();
   }, [id]);
 
-  // Handlers do Formulário
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormState({ ...formState, [name]: value });
   };
 
-  // Handlers da Lista (Permissões)
-  const handleArrayChange = (field, index, value) => {
-    const newArray = [...formState[field]];
-    newArray[index] = value;
-    setFormState({ ...formState, [field]: newArray });
-  };
-
-  const handleArrayAddItem = (field) => {
-    const newArray = [...formState[field], ""]; // Adiciona item vazio
-    setFormState({ ...formState, [field]: newArray });
-  };
-  
-  const handleArrayRemoveItem = (field, index) => {
-    const newArray = formState[field].filter((_, i) => i !== index);
-    setFormState({ ...formState, [field]: newArray });
-  };
-
-  // Handlers dos Botões Principais
   const handleSave = async () => {
     setIsSaving(true);
-    setError(null);
     try {
-      await apiSaveColaborador(id, formState);
-      setColaborador(formState); // Atualiza os dados originais
-      setEditMode(false);
-      // alert("Salvo com sucesso!"); // Use 'toasts' (sonner) aqui no futuro
+      await apiSaveColaborador(id, formState, colaboradorDadosOriginais);
+      alert("Dados salvos com sucesso!");
+      window.location.reload();
     } catch (err) {
-      setError("Falha ao salvar: " + err.message);
-      // alert("Falha ao salvar!");
+      alert(err.message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    setFormState(colaborador); // Restaura para os dados originais
-    setEditMode(false);
-  };
-
-  // Renderização condicional
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen text-gray-600">
-        Carregando ficha do colaborador...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col justify-center items-center h-screen text-red-600">
-        <AlertCircle size={40} className="mb-2" />
-        <p className="font-medium">Erro ao carregar dados!</p>
-        <p className="text-sm">{error}</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700"
-        >
-          ← Voltar
-        </button>
-      </div>
-    );
-  }
-
-  if (!formState) return null; // Se 'formState' ainda não carregou
+  if (isLoading) return <div className="flex justify-center h-screen items-center">Carregando...</div>;
+  if (error) return <div className="text-center mt-10 text-red-600">{error} <br/><button onClick={() => navigate(-1)}>Voltar</button></div>;
+  if (!formState) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 sm:px-8 py-10">
-
-      {/* Cabeçalho de Ações */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 max-w-4xl mx-auto gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 w-full sm:w-auto"
-        >
-          ← Voltar
-        </button>
-
-        <div className="flex gap-2 w-full sm:w-auto">
-          {!editMode ? (
-            <button
-              onClick={() => setEditMode(true)}
-              className="flex items-center justify-center gap-2 bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 transition w-full"
-            >
-              <Edit size={18} />
-              Editar Colaborador
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex-1 disabled:bg-gray-400"
-              >
-                <Save size={18} />
-                {isSaving ? "Salvando..." : "Salvar"}
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={isSaving}
-                className="flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition flex-1"
-              >
-                <X size={18} />
-                Cancelar
-              </button>
-            </>
-          )}
+    <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <div className="max-w-5xl mx-auto flex justify-between items-center mb-6">
+        <button onClick={() => navigate(-1)} className="text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg">← Voltar</button>
+        <div className="flex gap-2">
+            {!editMode ? (
+                <button onClick={() => setEditMode(true)} className="bg-teal-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-teal-700 transition"><Edit size={18}/> Editar</button>
+            ) : (
+                <>
+                    <button onClick={handleSave} disabled={isSaving} className="bg-green-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition disabled:opacity-50"><Save size={18}/> {isSaving ? 'Salvando...' : 'Salvar'}</button>
+                    <button onClick={() => window.location.reload()} className="bg-red-500 text-white px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-red-600 transition"><X size={18}/> Cancelar</button>
+                </>
+            )}
         </div>
       </div>
-      
-      {/* Título Atualizado */}
-      <h1 className="text-xl font-semibold mb-6 text-gray-800 text-center">
-        Ficha do Colaborador
-      </h1>
 
-      <div className="bg-white rounded-2xl shadow-sm p-4 md:p-8 max-w-4xl mx-auto border border-gray-200">
-
-        {/* Foto + Dados Pessoais (usando EditableField) */}
-        <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
-          <img
-            src={formState.foto}
-            alt={formState.nome}
-            className="w-28 h-28 rounded-full border border-gray-300 object-cover"
-          />
-          
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700 w-full">
-            <EditableField
-              label="Nome completo"
-              value={formState.nome}
-              name="nome"
-              onChange={handleChange}
-              isEditing={editMode}
-            />
-            <EditableField
-              label="Cargo"
-              value={formState.cargo}
-              name="cargo"
-              onChange={handleChange}
-              isEditing={editMode}
-              type="select"
-              options={["Admin", "Recepcionista"]}
-            />
-             <EditableField
-              label="Email"
-              value={formState.email}
-              name="email"
-              onChange={handleChange}
-              isEditing={editMode}
-              type="email"
-            />
-             <EditableField
-              label="Telefone"
-              value={formState.telefone}
-              name="telefone"
-              onChange={handleChange}
-              isEditing={editMode}
-              type="tel"
-            />
-            <EditableField
-              label="Estúdio"
-              value={formState.estudio}
-              name="estudio"
-              onChange={handleChange}
-              isEditing={editMode}
-              type="select"
-              options={["Itaquera", "São Miguel", "Geral"]} 
-            />
-             <EditableField
-              label="Data de Admissão"
-              value={formState.dataAdmissao}
-              name="dataAdmissao"
-              onChange={handleChange}
-              isEditing={editMode}
-              type="date"
-            />
-            <EditableField
-              label="Status"
-              value={formState.status}
-              name="status"
-              onChange={handleChange}
-              isEditing={editMode}
-              type="select"
-              options={["Ativo", "Inativo"]}
-            />
-          </div>
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-teal-600 h-24 w-full relative">
+            <div className="absolute -bottom-12 left-8">
+                <img src={formState.foto} className="w-24 h-24 rounded-full border-4 border-white bg-white object-cover shadow-md" alt="Avatar" />
+            </div>
         </div>
+        
+        <div className="pt-16 px-8 pb-8">
+            <h1 className="text-2xl font-bold text-gray-800 mb-1">CADASTRO DE COLABORADOR</h1>
+            <p className="text-gray-500 mb-8 text-sm">Visualize e edite todas as informações cadastrais.</p>
 
-        <div className="border-t border-gray-200 my-6"></div>
-        <EditableList
-          label="Permissões no Sistema"
-          items={formState.permissoes}
-          name="permissoes"
-          onUpdate={handleArrayChange}
-          onAdd={handleArrayAddItem}
-          onRemove={handleArrayRemoveItem}
-          isEditing={editMode}
-        />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <EditableField icon={User} label="Nome Completo" name="nome" value={formState.nome} onChange={handleChange} isEditing={editMode} />
+                    <EditableField icon={Calendar} label="Data de Nascimento" name="nascimento" value={formState.nascimento} onChange={handleChange} isEditing={editMode} type="date" />
+                    
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="col-span-1">
+                             <EditableField label="Tipo Doc" name="tipoDoc" value="CPF" isEditing={false} />
+                        </div>
+                        <div className="col-span-2">
+                             <EditableField label="Número do CPF" name="cpf" value={formState.cpf} onChange={handleChange} isEditing={false} /> 
+                        </div>
+                    </div>
 
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="col-span-2">
+                            <EditableField icon={Phone} label="Número de Contato" name="telefone" value={formState.telefone} onChange={handleChange} isEditing={editMode} type="tel" />
+                        </div>
+                        <div className="col-span-1">
+                            <EditableField label="Tipo" name="tipoTelefone" value={formState.tipoTelefone} onChange={handleChange} isEditing={editMode} type="select" options={["residencial", "comercial", "familiar"]} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <EditableField label="Email Comercial" name="email" value={formState.email} onChange={handleChange} isEditing={editMode} type="email" />
+                    
+                    {editMode && (
+                        <EditableField label="Nova Senha (Opcional)" name="novaSenha" value={formState.novaSenha} onChange={handleChange} isEditing={true} type="password" placeholder="Deixe em branco para não mudar" />
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <EditableField label="Cargo / Função" name="cargo" value={formState.cargo} onChange={handleChange} isEditing={editMode} type="select" options={["Colaborador", "Recepcionista"]} />
+                        <EditableField label="Estúdio Alocado" name="estudio" value={formState.estudio} onChange={handleChange} isEditing={editMode} type="select" options={["Estúdio Itaquera", "Estúdio São Miguel"]} />
+                    </div>
+
+                    <EditableField icon={MapPin} label="Endereço (Rua, Nº, Bairro)" name="endereco" value={formState.endereco} onChange={handleChange} isEditing={editMode} />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <EditableField label="CEP (Só números)" name="cep" value={formState.cep} onChange={handleChange} isEditing={editMode} />
+                        <EditableField label="Tipo Endereço" name="tipoEndereco" value={formState.tipoEndereco} onChange={handleChange} isEditing={editMode} type="select" options={["residencial", "comercial"]} />
+                    </div>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
   );

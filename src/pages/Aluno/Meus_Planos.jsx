@@ -1,7 +1,7 @@
 // @ts-nocheck
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Planos/card";
 import { ButtonPlanos } from "@/components/ui/Planos/buttonPlanos";
 import { CheckCircle2, Send } from "lucide-react";
@@ -14,9 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/Planos/dialog";
 import { useSidebar } from "@/context/SidebarContext";
+import { planosService } from "@/services/planosService";
 
-function PlanCard(props) {
-  const { name, price, frequency, benefits } = props;
+// --- Componentes Auxiliares ---
+
+function PlanCard({ name, price, frequency, benefits }) {
   return (
     <Card className="p-4 sm:p-6 shadow-md border-2 border-blue-200 bg-white">
       <div className="mb-4">
@@ -32,24 +34,20 @@ function PlanCard(props) {
         <p className="text-sm font-semibold text-gray-900 mb-3">
           Benefícios inclusos:
         </p>
-        {benefits.map(function (benefit, index) {
-          return (
-            <div key={index} className="flex items-start gap-3">
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-sm sm:text-base text-gray-900 leading-relaxed">
-                {benefit}
-              </span>
-            </div>
-          );
-        })}
+        {benefits && benefits.map((benefit, index) => (
+          <div key={index} className="flex items-start gap-3">
+            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <span className="text-sm sm:text-base text-gray-900 leading-relaxed">
+              {benefit}
+            </span>
+          </div>
+        ))}
       </div>
     </Card>
   );
 }
 
-function PlanOptionCard(props) {
-  const { name, price, period, frequency, benefits, isCurrentPlan, onSelect } =
-    props;
+function PlanOptionCard({ name, price, period, frequency, benefits, isCurrentPlan, onSelect }) {
   return (
     <Card
       className={
@@ -76,16 +74,14 @@ function PlanOptionCard(props) {
       </div>
 
       <div className="space-y-2 sm:space-y-2.5 mb-4 sm:mb-6 flex-grow">
-        {benefits.map(function (benefit, index) {
-          return (
-            <div key={index} className="flex items-start gap-2 sm:gap-2.5">
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <span className="text-xs sm:text-sm text-gray-900 leading-relaxed">
-                {benefit}
-              </span>
-            </div>
-          );
-        })}
+        {benefits && benefits.map((benefit, index) => (
+          <div key={index} className="flex items-start gap-2 sm:gap-2.5">
+            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <span className="text-xs sm:text-sm text-gray-900 leading-relaxed">
+              {benefit}
+            </span>
+          </div>
+        ))}
       </div>
 
       <ButtonPlanos
@@ -105,8 +101,7 @@ function PlanOptionCard(props) {
   );
 }
 
-function ChangePlanDialog(props) {
-  const { open, onOpenChange, onConfirm, selectedPlan } = props;
+function ChangePlanDialog({ open, onOpenChange, onConfirm, selectedPlan, isLoading }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-md md:max-w-lg rounded-xl p-4 sm:p-6">
@@ -116,28 +111,26 @@ function ChangePlanDialog(props) {
           </DialogTitle>
           <DialogDescription className="text-sm sm:text-base text-gray-600 leading-relaxed">
             {selectedPlan
-              ? "Deseja solicitar a troca para o " +
-                selectedPlan +
-                "? Nossa equipe entrará em contato para confirmar a alteração em até 2 dias úteis."
-              : "Sua solicitação será enviada para nossa equipe. Entraremos em contato em até 2 dias úteis para apresentar as opções disponíveis e concluir a alteração."}
+              ? `Deseja solicitar a troca para o ${selectedPlan.name}? Nossa equipe entrará em contato para confirmar a alteração em até 2 dias úteis.`
+              : "Sua solicitação será enviada para nossa equipe."}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:gap-3 mt-4 sm:mt-6">
           <ButtonPlanos
             onClick={onConfirm}
             size="lg"
+            disabled={isLoading}
             className="w-full text-sm sm:text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-            Enviar solicitação
+            {isLoading ? "Enviando..." : "Enviar solicitação"}
           </ButtonPlanos>
           <ButtonPlanos
-            onClick={function () {
-              onOpenChange(false);
-            }}
+            onClick={() => onOpenChange(false)}
             variant="outline"
             size="lg"
             className="w-full text-sm sm:text-base font-medium"
+            disabled={isLoading}
           >
             Cancelar
           </ButtonPlanos>
@@ -147,208 +140,121 @@ function ChangePlanDialog(props) {
   );
 }
 
+// --- Componente Principal ---
+
 const Meus_Planos = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedPlanName, setSelectedPlanName] = useState("");
+  
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const [availablePlans, setAvailablePlans] = useState([]);
+  
+  const [isLoadingCurrentPlan, setIsLoadingCurrentPlan] = useState(true);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ title: "", desc: "", type: "success" });
+
   const { isMobile, sidebarWidth } = useSidebar();
 
-  const currentPlan = {
-    name: "Plano Mensal - 3x semana",
-    price: "R$ 390,00/mês",
-    frequency: "3 vezes por semana",
-    benefits: [
-      "Aulas de Pilates 3x na semana",
-      "Acesso livre aos equipamentos",
-      "Avaliação física mensal",
-      "Acompanhamento personalizado",
-    ],
+  const showToast = (title, desc, type) => {
+    // Garante que desc seja sempre uma string para evitar erro de objeto no React
+    const safeDesc = typeof desc === 'string' ? desc : JSON.stringify(desc);
+    
+    setToastMessage({ title, desc: safeDesc, type });
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 4000);
   };
 
-  const availablePlans = [
-    {
-      id: "mensal-1x",
-      name: "Plano Mensal - 1x semana",
-      price: "R$ 210,00",
-      frequency: "1 vez por semana",
-      period: "por mês",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-      ],
-    },
-    {
-      id: "mensal-2x",
-      name: "Plano Mensal - 2x semana",
-      price: "R$ 310,00",
-      frequency: "2 vezes por semana",
-      period: "por mês",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-      ],
-    },
-    {
-      id: "mensal-3x",
-      name: "Plano Mensal - 3x semana",
-      price: "R$ 390,00",
-      frequency: "3 vezes por semana",
-      period: "por mês",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-      ],
-    },
-    {
-      id: "trimestral-1x",
-      name: "Plano Trimestral - 1x semana",
-      price: "3x R$ 185,00",
-      frequency: "1 vez por semana",
-      period: "a cada 3 meses",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-        "12% de desconto",
-      ],
-    },
-    {
-      id: "trimestral-2x",
-      name: "Plano Trimestral - 2x semana",
-      price: "3x R$ 285,00",
-      frequency: "2 vezes por semana",
-      period: "a cada 3 meses",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "8% de desconto",
-      ],
-    },
-    {
-      id: "trimestral-3x",
-      name: "Plano Trimestral - 3x semana",
-      price: "3x R$ 375,00",
-      frequency: "3 vezes por semana",
-      period: "a cada 3 meses",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "4% de desconto",
-        "1 aula particular inclusa",
-      ],
-    },
-    {
-      id: "semestral-1x",
-      name: "Plano Semestral - 1x semana",
-      price: "6x R$ 170,00",
-      frequency: "1 vez por semana",
-      period: "a cada 6 meses",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-        "19% de desconto",
-      ],
-    },
-    {
-      id: "semestral-2x",
-      name: "Plano Semestral - 2x semana",
-      price: "6x R$ 270,00",
-      frequency: "2 vezes por semana",
-      period: "a cada 6 meses",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "13% de desconto",
-        "1 aula particular inclusa",
-      ],
-    },
-    {
-      id: "semestral-3x",
-      name: "Plano Semestral - 3x semana",
-      price: "6x R$ 360,00",
-      frequency: "3 vezes por semana",
-      period: "a cada 6 meses",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "8% de desconto",
-        "2 aulas particulares inclusas",
-      ],
-    },
-    {
-      id: "anual-1x",
-      name: "Plano Anual - 1x semana",
-      price: "12x R$ 155,00",
-      frequency: "1 vez por semana",
-      period: "por ano",
-      benefits: [
-        "Aulas de Pilates 1x na semana",
-        "Acesso aos equipamentos",
-        "Avaliação física mensal",
-        "26% de desconto",
-      ],
-    },
-    {
-      id: "anual-2x",
-      name: "Plano Anual - 2x semana",
-      price: "12x R$ 255,00",
-      frequency: "2 vezes por semana",
-      period: "por ano",
-      benefits: [
-        "Aulas de Pilates 2x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "18% de desconto",
-        "2 aulas particulares inclusas",
-      ],
-    },
-    {
-      id: "anual-3x",
-      name: "Plano Anual - 3x semana",
-      price: "12x R$ 345,00",
-      frequency: "3 vezes por semana",
-      period: "por ano",
-      benefits: [
-        "Aulas de Pilates 3x na semana",
-        "Acesso livre aos equipamentos",
-        "Avaliação física mensal",
-        "Acompanhamento personalizado",
-        "12% de desconto",
-        "4 aulas particulares inclusas",
-        "Prioridade na reserva de horários",
-      ],
-    },
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+        setIsLoadingCurrentPlan(true);
+        setIsLoadingPlans(true);
 
-  function handlePlanSelect(planName) {
-    setSelectedPlanName(planName);
+        try {
+            const activePlan = await planosService.getCurrentPlan();
+            setCurrentPlan(activePlan);
+
+            const plansData = await planosService.getAvailablePlans();
+            const plansMapped = plansData.map(p => ({
+                id: p.id_plano || p.id,
+                name: p.descricao_plano || p.nome || p.titulo,
+                price: `R$ ${p.valor_plano}`,
+                frequency: p.modalidade_plano || "Frequência a definir",
+                period: p.tipo_plano === 'padrao' ? 'por mês' : 'período definido',
+                benefits: [
+                    `Aulas: ${p.qtde_aulas_totais || '?'}`,
+                    "Acesso aos equipamentos"
+                ]
+            }));
+            setAvailablePlans(plansMapped);
+
+        } catch (error) {
+            console.error("Erro ao carregar dados:", error);
+            showToast("Erro", "Falha ao carregar informações dos planos.", "error");
+        } finally {
+            setIsLoadingCurrentPlan(false);
+            setIsLoadingPlans(false);
+        }
+    };
+
+    loadData();
+  }, []);
+
+  const handlePlanSelect = (plan) => {
+    setSelectedPlan(plan);
     setDialogOpen(true);
-  }
+  };
 
-  function handleChangePlanRequest() {
-    setDialogOpen(false);
-    setToastVisible(true);
-    setTimeout(function () {
-      setToastVisible(false);
-    }, 4000);
-    setSelectedPlanName("");
-  }
+  const handleChangePlanRequest = async () => {
+    if (!selectedPlan) return;
+
+    setIsSubmitting(true);
+
+    const payload = {
+        menssagem: `Quero trocar para o plano ${selectedPlan.name}`,
+        tipo_de_solicitacao: "plano",
+        acao_solicitacao_plano: "MUDANCA_PLANO",
+        acao_solicitacao_aula: null,
+        fk_id_aula_referencia: null,
+        data_sugerida: null,
+        fk_id_novo_plano: selectedPlan.id,
+        fk_id_novo_plano_personalizado: null,
+    };
+
+    try {
+        await planosService.requestPlanChange(payload);
+        
+        showToast("Solicitação enviada com sucesso!", "Nossa equipe confirmará em breve.", "success");
+        setDialogOpen(false);
+        setSelectedPlan(null);
+
+    } catch (error) {
+        console.error("Erro na solicitação:", error);
+        
+        // Tratamento seguro da mensagem de erro
+        let errorMsg = "Erro desconhecido";
+        
+        if (error.response?.data?.detail) {
+            const detail = error.response.data.detail;
+            // Se detail for array (comum no FastAPI), formata ele
+            if (Array.isArray(detail)) {
+                errorMsg = detail.map(e => e.msg).join(', ');
+            } else {
+                errorMsg = String(detail);
+            }
+        } else if (error.message) {
+            errorMsg = error.message;
+        }
+
+        showToast("Erro na Solicitação", errorMsg, "error");
+        setDialogOpen(false); 
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -369,40 +275,55 @@ const Meus_Planos = () => {
         <main className="flex-1 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
           <div className="max-w-7xl mx-auto">
             <div className="space-y-6 sm:space-y-8">
+              
               <section className="space-y-3 sm:space-y-4">
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Plano Atual
                 </h2>
-                <PlanCard
-                  name={currentPlan.name}
-                  price={currentPlan.price}
-                  frequency={currentPlan.frequency}
-                  benefits={currentPlan.benefits}
-                />
+                
+                {isLoadingCurrentPlan ? (
+                    <div className="p-6 bg-white rounded-lg shadow border border-gray-200 animate-pulse">
+                        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/5"></div>
+                    </div>
+                ) : currentPlan ? (
+                    <PlanCard
+                      name={currentPlan.name}
+                      price={currentPlan.price}
+                      frequency={currentPlan.frequency}
+                      benefits={currentPlan.benefits}
+                    />
+                ) : (
+                    <div className="p-6 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800">
+                        Você ainda não possui um plano ativo. Escolha um abaixo para começar!
+                    </div>
+                )}
               </section>
 
               <section className="space-y-3 sm:space-y-4">
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Solicitar mudança de plano
                 </h2>
-                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                  {availablePlans.map(function (plan) {
-                    return (
-                      <PlanOptionCard
+                
+                {isLoadingPlans ? (
+                    <div className="text-center py-8 text-gray-500">Carregando planos disponíveis...</div>
+                ) : (
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    {availablePlans.map((plan) => (
+                        <PlanOptionCard
                         key={plan.id}
                         name={plan.name}
                         price={plan.price}
                         period={plan.period}
                         frequency={plan.frequency}
                         benefits={plan.benefits}
-                        isCurrentPlan={plan.name === currentPlan.name}
-                        onSelect={function () {
-                          handlePlanSelect(plan.name);
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+                        isCurrentPlan={currentPlan && currentPlan.name === plan.name}
+                        onSelect={() => handlePlanSelect(plan)}
+                        />
+                    ))}
+                    </div>
+                )}
               </section>
             </div>
           </div>
@@ -412,16 +333,17 @@ const Meus_Planos = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onConfirm={handleChangePlanRequest}
-          selectedPlan={selectedPlanName}
+          selectedPlan={selectedPlan}
+          isLoading={isSubmitting}
         />
 
         {toastVisible && (
-          <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg z-50 animate-in slide-in-from-bottom-5 max-w-[90vw] sm:max-w-md">
+          <div className={`fixed bottom-4 right-4 px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg z-50 animate-in slide-in-from-bottom-5 max-w-[90vw] sm:max-w-md text-white ${toastMessage.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
             <p className="font-semibold text-sm sm:text-base">
-              Solicitação enviada com sucesso!
+              {toastMessage.title}
             </p>
             <p className="text-xs sm:text-sm text-green-100 mt-1">
-              Nossa equipe confirmará em breve.
+              {toastMessage.desc}
             </p>
           </div>
         )}

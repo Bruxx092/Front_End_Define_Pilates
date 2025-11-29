@@ -1,609 +1,539 @@
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
+import { ChevronDown, AlertCircle, LogOut, Calendar, Clock, FileText } from 'lucide-react';
 
-// Dados de exemplo das aulas
-const sampleClasses = [
- { id: 1, title: 'Pilates para Iniciante', date: '02/09', teacher: 'Prof. Ana Souza', studio: 'Estudio Ghibli' },
- { id: 2, title: 'Yoga Avançado', date: '03/09', teacher: 'Prof. Carlos Silva', studio: 'Estudio Paz' },
- { id: 3, title: 'Alongamento', date: '04/09', teacher: 'Prof. Mariana Costa', studio: 'Estudio Flex' },
- { id: 4, title: 'Pilates Intermediário', date: '05/09', teacher: 'Prof. Ana Souza', studio: 'Estudio Ghibli' },
- { id: 5, title: 'Meditação Guiada', date: '06/09', teacher: 'Prof. João Medeiros', studio: 'Estudio Zen' },
- { id: 6, title: 'Pilates Avançado', date: '07/09', teacher: 'Prof. Ricardo Lima', studio: 'Estudio Ghibli' },
- { id: 7, title: 'Yoga para Iniciantes', date: '08/09', teacher: 'Prof. Carla Santos', studio: 'Estudio Paz' },
- { id: 8, title: 'Pilates Funcional', date: '09/09', teacher: 'Prof. Ana Souza', studio: 'Estudio Ghibli' },
- { id: 9, title: 'Alongamento Profundo', date: '10/09', teacher: 'Prof. Mariana Costa', studio: 'Estudio Flex' },
- { id: 10, title: 'Meditação Avançada', date: '11/09', teacher: 'Prof. João Medeiros', studio: 'Estudio Zen' },
- { id: 11, title: 'Pilates Terapêutico', date: '12/09', teacher: 'Prof. Ricardo Lima', studio: 'Estudio Ghibli' },
- { id: 12, title: 'Yoga Restaurativo', date: '13/09', teacher: 'Prof. Carla Santos', studio: 'Estudio Paz' }
-];
+const BASE_URL = 'http://localhost:8000';
 
-// Função auxiliar para formatar números com zero à esquerda
-const formatWithZero = (num) => {
-  return num < 10 ? '0' + num : num.toString();
+// --- FUNÇÃO FETCH SEGURA PARA ALUNO ---
+async function safeFetchAluno(endpoint, options = {}) {
+    const token = localStorage.getItem('accessToken');
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+        const response = await fetch(`${BASE_URL}${endpoint}`, {
+            ...options,
+            headers
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            throw new Error("AUTH_ERROR");
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || JSON.stringify(errorData) || `Erro HTTP: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        throw error; 
+    }
+}
+
+// --- COMPONENTES UI ---
+
+const MonthYearSelector = ({ month, year, onMonthChange, onYearChange }) => {
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    return (
+        <div className="flex flex-wrap gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2">
+                <Calendar className="text-[#67AF97]" size={20} />
+                <span className="font-medium text-gray-700">Filtrar por:</span>
+            </div>
+            <div className="relative inline-block w-40">
+                <select 
+                    value={month} 
+                    onChange={(e) => onMonthChange(parseInt(e.target.value))} 
+                    className="appearance-none bg-gray-50 border border-gray-300 rounded-md py-2 pl-3 pr-8 text-base font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97] text-gray-700 cursor-pointer"
+                >
+                    {monthNames.map((name, index) => (
+                        <option key={index} value={index}>{name}</option>
+                    ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+            </div>
+            <div className="relative inline-block w-32">
+                <select 
+                    value={year} 
+                    onChange={(e) => onYearChange(parseInt(e.target.value))} 
+                    className="appearance-none bg-gray-50 border border-gray-300 rounded-md py-2 pl-3 pr-8 text-base font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97] text-gray-700 cursor-pointer"
+                >
+                    {Array.from({ length: 5 }, (_, i) => 2024 + i).map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+            </div>
+        </div>
+    );
 };
 
-// Componente do Popup de Solicitação de Reagendamento
-function RescheduleRequestPopup({ isOpen, onClose, classData, onSubmitRequest }) {
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [reason, setReason] = useState('');
-
-  // Horários disponíveis para demonstração
-  const availableTimes = ['08:00', '09:00', '10:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
-
-  useEffect(() => {
-    if (isOpen && classData) {
-      // Extrai data e hora dos dados atuais da aula (formato DD/MM)
-      const [day, month] = classData.date.split('/');
-      const currentYear = new Date().getFullYear();
-      const formattedMonth = month && month.length === 1 ? '0' + month : month;
-      const formattedDay = day && day.length === 1 ? '0' + day : day;
-      setSelectedDate(`${currentYear}-${formattedMonth}-${formattedDay}`);
-      setSelectedTime('08:00'); // Valor padrão
-      setReason(''); // Limpa o motivo
-    }
-  }, [isOpen, classData]);
-
-  const handleSubmit = () => {
-    if (selectedDate && selectedTime && reason.trim()) {
-      // Formata a data para o formato DD/MM usado no card
-      const dateObj = new Date(selectedDate);
-      const day = formatWithZero(dateObj.getDate());
-      const month = formatWithZero(dateObj.getMonth() + 1);
-      const formattedDate = `${day}/${month}`;
-      
-      // Cria a solicitação de reagendamento
-      const request = {
-        id: Date.now(), // ID temporário
-        classId: classData.id,
-        className: classData.title,
-        currentDate: classData.date,
-        requestedDate: formattedDate,
-        requestedTime: selectedTime,
-        reason: reason.trim(),
-        status: 'pending', // pending, approved, rejected
-        createdAt: new Date().toISOString()
-      };
-      
-      onSubmitRequest(request);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Cabeçalho */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800">Solicitar Reagendamento</h3>
-        </div>
-
-        {/* Conteúdo */}
-        <div className="px-6 py-4">
-          <div className="mb-4">
-            <p className="text-gray-600 mb-2">Aula selecionada:</p>
-            <p className="font-semibold text-lg text-gray-800">{classData?.title}</p>
-            <p className="text-gray-600">Data atual: {classData?.date}</p>
-          </div>
-
-          <div className="space-y-4">
-            {/* Seleção de Data */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data Desejada
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]} // Não permite datas passadas
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#67AF97] focus:border-transparent"
-              />
+const ClassCard = ({ id, sqlId, modality, date, time, fullDate, onReschedule }) => {
+    return (
+        <article className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-5 flex flex-col justify-between h-48 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[#67AF97]"></div>
+            
+            <div className="flex flex-col items-center flex-grow justify-center">
+                <h3 className="font-bold text-gray-800 text-xl mb-3 text-center line-clamp-2">
+                    {modality}
+                </h3>
+                
+                <div className="flex gap-6 text-center mb-4">
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Data</span>
+                        <span className="text-lg font-medium text-[#67AF97]">{date}</span>
+                    </div>
+                    <div className="w-px bg-gray-200"></div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Horário</span>
+                        <span className="text-lg font-medium text-gray-800">{time}</span>
+                    </div>
+                </div>
+                {/* Debug visual opcional: ID SQL */}
+                {/* <p className="text-xs text-gray-400">ID: {sqlId}</p> */}
             </div>
 
-            {/* Seleção de Horário */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Horário Desejado
-              </label>
-              <select
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#67AF97] focus:border-transparent"
-              >
-                <option value="">Selecione um horário</option>
-                {availableTimes.map(time => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-            </div>
+            <button
+                onClick={() => onReschedule({ id, sqlId, title: modality, date, fullDate })}
+                className="w-full py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-md hover:bg-[#67af97] hover:text-white transition-colors"
+            >
+                Solicitar Reagendamento
+            </button>
+        </article>
+    );
+};
 
-            {/* Motivo do reagendamento */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Motivo do Reagendamento
-              </label>
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Explique o motivo para o reagendamento..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#67AF97] focus:border-transparent resize-none"
-              />
-            </div>
-          </div>
-        </div>
+// --- POPUP DE REAGENDAMENTO ---
+function RescheduleRequestPopup({ isOpen, onClose, classData, onSubmitRequest, isLoading }) {
+    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedTime, setSelectedTime] = useState('');
+    const [reason, setReason] = useState('');
 
-        {/* Rodapé com botões */}
-        <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3 justify-end">
-          <button
-            onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!selectedDate || !selectedTime || !reason.trim()}
-            className="w-full sm:w-auto px-4 py-2 bg-[#67AF97] text-white rounded-md hover:bg-[#5a9c87] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Enviar Solicitação
-          </button>
+    const availableTimes = ['07:00', '08:00', '09:00', '10:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+    useEffect(() => {
+        if (isOpen && classData) {
+            setSelectedDate('');
+            setSelectedTime('');
+            setReason('');
+        }
+    }, [isOpen, classData]);
+
+    const handleSubmit = () => {
+        if (selectedDate && selectedTime && reason.trim()) {
+            onSubmitRequest({
+                classId: classData.sqlId, // Envia o ID SQL para a FK
+                newDate: selectedDate,
+                newTime: selectedTime,
+                reason: reason
+            });
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+                <div className="px-6 py-4 bg-[#67AF97] text-white flex justify-between items-center">
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                        <Clock size={20} /> Solicitar Reagendamento
+                    </h3>
+                    <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+                        <LogOut size={18} className="rotate-180" /> 
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <p className="text-xs text-gray-500 uppercase font-bold">Aula Atual</p>
+                        <p className="font-semibold text-gray-800">{classData?.title}</p>
+                        <p className="text-sm text-gray-600">Dia {classData?.date}</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nova Data Desejada</label>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#67AF97] focus:border-transparent"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Novo Horário</label>
+                        <select
+                            value={selectedTime}
+                            onChange={(e) => setSelectedTime(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#67AF97] focus:border-transparent bg-white"
+                        >
+                            <option value="">Selecione...</option>
+                            {availableTimes.map(time => (
+                                <option key={time} value={time}>{time}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Ex: Consulta médica..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#67AF97] resize-none"
+                        />
+                    </div>
+                </div>
+
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                        disabled={isLoading}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={!selectedDate || !selectedTime || !reason.trim() || isLoading}
+                        className="px-4 py-2 bg-[#67AF97] text-white rounded-lg hover:bg-[#5a9c87] font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {isLoading ? 'Enviando...' : 'Enviar Solicitação'}
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
 
-// Componente para a tabela de solicitações
-function RescheduleRequestsTable({ requests, onUpdateRequestStatus, isMobile }) {
-  if (requests.length === 0) return null;
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'pending': return 'Pendente';
-      case 'approved': return 'Aceito';
-      case 'rejected': return 'Rejeitado';
-      default: return status;
-    }
-  };
-
-  return (
-    <div className="mt-6 bg-white rounded-lg shadow-lg p-4">
-      <h3 className="font-semibold text-black text-xl mb-4">Solicitações de Reagendamento</h3>
-      
-      {isMobile ? (
-        // Layout mobile para solicitações
-        <div className="space-y-4">
-          {requests.map((request) => (
-            <div key={request.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-medium text-black">{request.className}</h4>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                  {getStatusText(request.status)}
-                </span>
-              </div>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>Data atual: {request.currentDate}</p>
-                <p>Data solicitada: {request.requestedDate} às {request.requestedTime}</p>
-                <p>Motivo: {request.reason}</p>
-              </div>
+// --- TABELA DE SOLICITAÇÕES ---
+function RescheduleRequestsTable({ requests, isLoading }) {
+    if (isLoading) {
+        return (
+            <div className="mt-10 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#67AF97] mx-auto mb-3"></div>
+                    <p className="text-gray-500">Carregando solicitações...</p>
+                </div>
             </div>
-          ))}
+        );
+    }
+
+    // Não mostra nada se não houver requests
+    if (!requests || requests.length === 0) {
+        return null; 
+    }
+
+    const getStatusStyle = (status) => {
+        if (!status) return 'bg-gray-100 text-gray-700';
+        switch (status.toLowerCase()) {
+            case 'em espera':
+            case 'pendente':
+                return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+            case 'atendida':
+            case 'aprovada':
+                return 'bg-green-100 text-green-700 border-green-200';
+            case 'recusada':
+            case 'rejeitada':
+                return 'bg-red-100 text-red-700 border-red-200';
+            default: 
+                return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '--';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        } catch {
+            return dateString;
+        }
+    };
+
+    return (
+        <div className="mt-10 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+                <FileText size={20} className="text-gray-500" />
+                <h3 className="font-semibold text-gray-800">Histórico de Solicitações</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-gray-600">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3">Aula ID</th>
+                            <th className="px-6 py-3">Data Solicitada</th>
+                            <th className="px-6 py-3">Motivo</th>
+                            <th className="px-6 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {requests.map((request) => (
+                            <tr key={request.id_solicitacao || request.id || Math.random()} className="bg-white border-b hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium text-gray-900">
+                                    {request.fk_id_aula_referencia || 'N/A'}
+                                </td>
+                                <td className="px-6 py-4">{formatDate(request.data_sugerida)}</td>
+                                <td className="px-6 py-4 max-w-xs" title={request.menssagem}>
+                                    <div className="truncate">{request.menssagem || '--'}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(request.status_solicitacao || request.status)}`}>
+                                        {request.status_solicitacao ? request.status_solicitacao.toUpperCase() : 'PENDENTE'}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
-      ) : (
-        // Layout desktop para solicitações
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-4 py-2 text-left">Aula</th>
-                <th className="border border-gray-200 px-4 py-2 text-left">Data Atual</th>
-                <th className="border border-gray-200 px-4 py-2 text-left">Data Solicitada</th>
-                <th className="border border-gray-200 px-4 py-2 text-left">Motivo</th>
-                <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((request) => (
-                <tr key={request.id}>
-                  <td className="border border-gray-200 px-4 py-2">{request.className}</td>
-                  <td className="border border-gray-200 px-4 py-2">{request.currentDate}</td>
-                  <td className="border border-gray-200 px-4 py-2">{request.requestedDate} às {request.requestedTime}</td>
-                  <td className="border border-gray-200 px-4 py-2">{request.reason}</td>
-                  <td className="border border-gray-200 px-4 py-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                      {getStatusText(request.status)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+    );
 }
 
-export default function MinhasAulas({ classes = sampleClasses }) {
- const [currentPage, setCurrentPage] = useState(0);
- const [isAnimating, setIsAnimating] = useState(false);
- const [menuOpen, setMenuOpen] = useState(false);
- const [reschedulePopup, setReschedulePopup] = useState({ isOpen: false, classData: null });
- const [classesData, setClassesData] = useState(classes);
- const [rescheduleRequests, setRescheduleRequests] = useState([]);
- const { isMobile, sidebarWidth } = useSidebar();
- const trackRef = useRef(null);
+// --- PÁGINA PRINCIPAL ---
+export default function MinhasAulas() {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const { isMobile, sidebarWidth } = useSidebar();
+    
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+    
+    const [classes, setClasses] = useState([]); 
+    const [isLoading, setIsLoading] = useState(false);
+    const [authError, setAuthError] = useState(false);
 
- // Função para ordenar as aulas por data (mais próximas primeiro)
- const sortClassesByDate = (classesArray) => {
-   return [...classesArray].sort((a, b) => {
-     // Converte datas DD/MM para objeto Date para comparação
-     const [dayA, monthA] = a.date.split('/').map(Number);
-     const [dayB, monthB] = b.date.split('/').map(Number);
-     const year = new Date().getFullYear();
-     
-     const dateA = new Date(year, monthA - 1, dayA);
-     const dateB = new Date(year, monthB - 1, dayB);
-     
-     return dateA.getTime() - dateB.getTime();
-   });
- };
+    const [reschedulePopup, setReschedulePopup] = useState({ isOpen: false, classData: null });
+    const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+    const [rescheduleRequests, setRescheduleRequests] = useState([]);
+    const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
- // Atualiza a ordenação quando os dados mudam
- useEffect(() => {
-   setClassesData(sortClassesByDate(classes));
- }, []);
+    useEffect(() => {
+        fetchMyClasses();
+    }, [currentMonth, currentYear]);
 
- // Função para calcular itens por página de forma responsiva
- const getItemsPerPage = () => {
-   if (isMobile) {
-     return 4;
-   }
-   const width = window.innerWidth;
-   if (width < 768) return 4;
-   if (width < 1024) return 6;
-   if (width < 1440) return 8;
-   return 8;
- };
+    const fetchMyClasses = async () => {
+        setIsLoading(true);
+        setAuthError(false);
+        try {
+            const startDate = new Date(currentYear, currentMonth, 1);
+            const endDate = new Date(currentYear, currentMonth + 1, 0);
 
- // Função para paginar as aulas
- const paginateClasses = (classesArray, itemsPerPage) => {
-   const pages = [];
-   for (let i = 0; i < classesArray.length; i += itemsPerPage) {
-     pages.push(classesArray.slice(i, i + itemsPerPage));
-   }
-   return pages;
- };
+            const startStr = startDate.toISOString().split('T')[0];
+            const endStr = endDate.toISOString().split('T')[0];
 
- const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage());
- const pages = paginateClasses(classesData, itemsPerPage);
- const pagesCount = pages.length;
+            const endpoint = `/agenda/minhas_aulas?start_date=${startStr}&end_date=${endStr}`;
+            const data = await safeFetchAluno(endpoint);
+            
+            if (data && Array.isArray(data)) {
+                const formattedClasses = data.map(cls => {
+                    const rawDate = cls.dataAgendaAula || cls.data_aula;
+                    const dateObj = new Date(rawDate);
+                    const isValidDate = dateObj instanceof Date && !isNaN(dateObj.getTime());
+                    
+                    const day = isValidDate ? String(dateObj.getDate()).padStart(2, '0') : '--';
+                    const month = isValidDate ? String(dateObj.getMonth() + 1).padStart(2, '0') : '--';
+                    const formattedDate = `${day}/${month}`;
+                    const hours = isValidDate ? String(dateObj.getHours()).padStart(2, '0') : '--';
+                    const minutes = isValidDate ? String(dateObj.getMinutes()).padStart(2, '0') : '--';
+                    const timeStr = `${hours}:${minutes}`;
 
- // Atualizar itens por página quando a janela for redimensionada
- useEffect(() => {
-   const handleResize = () => {
-     setItemsPerPage(getItemsPerPage());
-   };
+                    // IDENTIFICAÇÃO CORRETA DO ID SQL
+                    // O backend Mongo geralmente retorna 'AulaID' (inteiro) ou 'fk_id_aula'
+                    // Se vier só _id (Mongo), não serve para FK do SQL.
+                    const sqlId = cls.AulaID || cls.fk_id_aula || cls.id; 
 
-   window.addEventListener('resize', handleResize);
-   return () => window.removeEventListener('resize', handleResize);
- }, []);
+                    return {
+                        id: cls._id || cls.id, // ID único do card (Mongo ID preferencialmente para key)
+                        sqlId: parseInt(sqlId, 10), // ID SQL para operações de banco relacional
+                        modality: cls.disciplina || cls.titulo_aula || 'Aula de Pilates',
+                        date: formattedDate,
+                        time: timeStr,
+                        fullDate: isValidDate ? dateObj : new Date()
+                    };
+                });
+                
+                formattedClasses.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
+                setClasses(formattedClasses);
+            } else {
+                setClasses([]);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar minhas aulas:", error);
+            if (error.message === "AUTH_ERROR") setAuthError(true);
+            else setClasses([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
- // Função para navegar entre páginas do carrossel
- const goToPage = (index) => {
-   if (index === currentPage || index < 0 || index >= pagesCount) return;
-   setIsAnimating(true);
-   setCurrentPage(index);
-   setTimeout(() => setIsAnimating(false), 450);
- };
+    const handleOpenReschedule = (classData) => {
+        setReschedulePopup({ isOpen: true, classData });
+    };
 
- // Função para abrir o popup de solicitação de reagendamento
- const handleOpenReschedule = (classData) => {
-   setReschedulePopup({ isOpen: true, classData });
- };
+    const handleCloseReschedule = () => {
+        setReschedulePopup({ isOpen: false, classData: null });
+    };
 
- // Função para fechar o popup de reagendamento
- const handleCloseReschedule = () => {
-   setReschedulePopup({ isOpen: false, classData: null });
- };
+    const handleSubmitReschedule = async ({ classId, newDate, newTime, reason }) => {
+        setIsSubmittingRequest(true);
+        try {
+            // VALIDACAO RIGOROSA DO ID
+            const intClassId = parseInt(classId, 10);
+            
+            if (!intClassId || isNaN(intClassId)) {
+                throw new Error("ID da aula inválido ou não encontrado. A aula pode não estar sincronizada corretamente.");
+            }
 
- // Função para submeter uma solicitação de reagendamento
- const handleSubmitRescheduleRequest = (request) => {
-   // Adiciona a solicitação à lista (simulação - será substituído pela integração com backend)
-   setRescheduleRequests(prev => [...prev, request]);
-   
-   // Fecha o popup
-   handleCloseReschedule();
- };
+            const dataSugeridaISO = new Date(`${newDate}T${newTime}:00`).toISOString();
 
- // Função para atualizar o status de uma solicitação (simulação de aprovação)
- const handleUpdateRequestStatus = (requestId, newStatus) => {
-   setRescheduleRequests(prev => 
-     prev.map(request => {
-       if (request.id === requestId) {
-         const updatedRequest = { ...request, status: newStatus };
-         
-         // Se foi aprovado, atualiza a data da aula
-         if (newStatus === 'approved') {
-           setClassesData(prevClasses => {
-             const updatedClasses = prevClasses.map(c => {
-               if (c.id === request.classId) {
-                 return {
-                   ...c,
-                   date: request.requestedDate,
-                   time: request.requestedTime
-                 };
-               }
-               return c;
-             });
-             return sortClassesByDate(updatedClasses);
-           });
-         }
-         
-         return updatedRequest;
-       }
-       return request;
-     })
-   );
- };
+            const payload = {
+                tipo_de_solicitacao: "aula",
+                acao_solicitacao_aula: "REAGENDAMENTO",
+                fk_id_aula_referencia: intClassId,
+                data_sugerida: dataSugeridaISO,
+                menssagem: reason || "Sem motivo"
+            };
 
- // Navegação por teclado (setas)
- useEffect(() => {
-   const onKey = (e) => {
-     if (e.key === 'ArrowRight') goToPage(Math.min(currentPage + 1, pagesCount - 1));
-     if (e.key === 'ArrowLeft') goToPage(Math.max(currentPage - 1, 0));
-   };
-   window.addEventListener('keydown', onKey);
-   return () => window.removeEventListener('keydown', onKey);
- }, [currentPage, pagesCount]);
+            console.log("Enviando Payload Corrigido:", payload);
 
- return (
-   <div className="flex min-h-screen bg-gray-50 font-inter">
-     {/* Componente da Sidebar */}
-     <SidebarUnificada
-       menuItems={sidebarConfigs.aluno.menuItems}
-       userInfo={sidebarConfigs.aluno.userInfo}
-       isOpen={menuOpen}
-       onOpenChange={setMenuOpen}
-     />
+            const response = await safeFetchAluno('/solicitacao/createSolcicitacao', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
 
-     {/* Container do conteúdo principal que se ajusta à sidebar */}
-     <div
-       className="flex flex-col flex-1 transition-all duration-300 min-w-0"
-       style={{
-         marginLeft: !isMobile ? `${sidebarWidth}px` : "0",
-         width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%",
-       }}
-     >
-       {/* Conteúdo específico da página MinhasAulas */}
-       <main className="flex-1 flex items-center justify-center py-4 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
-         <div className={`w-full ${isMobile ? 'px-4' : 'max-w-7xl'}`}>
-           {/* Container principal responsivo */}
-           <div className={`relative bg-white rounded-lg shadow-lg flex flex-col ${isMobile ? 'w-full mx-auto my-2' : 'w-full h-[780px]'}`}>
+            alert("Solicitação enviada com sucesso!");
+            
+            setRescheduleRequests(prev => [{
+                id: Date.now(),
+                fk_id_aula_referencia: intClassId,
+                data_sugerida: dataSugeridaISO,
+                menssagem: reason,
+                status_solicitacao: "em espera",
+                ...response 
+            }, ...prev]);
 
-             {/* Cabeçalho */}
-             <div className={`flex justify-center ${isMobile ? 'px-4 pt-4' : 'px-8 pt-6'}`}>
-               <h2 className={`font-semibold text-black ${isMobile ? 'text-2xl' : 'text-[34px]'}`}>
-                 Aulas do Mês
-               </h2>
-             </div>
+            handleCloseReschedule();
 
-             {/* Área de conteúdo do carrossel */}
-             <div className={`flex flex-col flex-grow ${isMobile ? 'p-2' : 'px-6 py-4 lg:px-10 lg:py-6'}`}>
+        } catch (error) {
+            console.error("Erro ao criar solicitação:", error);
+            alert(`Erro ao enviar solicitação: ${error.message}`);
+        } finally {
+            setIsSubmittingRequest(false);
+        }
+    };
 
-               {/* Viewport do slider */}
-               <div className="relative overflow-hidden flex-grow">
+    const handleLogout = () => {
+        localStorage.clear();
+        window.location.href = '/login';
+    };
 
-                 {/* Track do slider */}
-                 <div
-                   ref={trackRef}
-                   className="flex h-full"
-                   style={{
-                     width: `${pagesCount * 100}%`,
-                     transform: `translateX(-${currentPage * (100 / pagesCount)}%)`,
-                     transition: isAnimating ? 'transform 420ms ease' : 'none'
-                   }}
-                 >
-                   {/* Renderiza cada página de aulas */}
-                   {pages.map((pageClasses, pageIndex) => (
-                     <div
-                       key={pageIndex}
-                       className="flex-shrink-0 w-full"
-                       style={{ width: `${100 / pagesCount}%`, padding: isMobile ? '4px' : '8px' }}
-                     >
-                       {/* Grid responsivo */}
-                       <div className={`w-full h-full flex items-start justify-center`}>
-                         <div className={`
-                           ${isMobile
-                             ? 'flex flex-col gap-4 w-full'
-                             : `grid w-full h-full gap-4 lg:gap-6 ${
-                                 window.innerWidth < 1024 
-                                   ? 'grid-cols-2' 
-                                   : window.innerWidth < 1440
-                                     ? 'grid-cols-3'
-                                     : 'grid-cols-4'
-                               }`
-                           }
-                         `}>
-                           {/* Mapeia e renderiza cada card de aula */}
-                           {pageClasses.map((c) => (
-                             <article
-                               key={`${pageIndex}-${c.id}`}
-                               className={`
-                                 bg-[#FEFEFE] border border-black rounded-lg shadow-md p-4 box-border
-                                 flex flex-col justify-between items-center text-center
-                                 ${isMobile ? 'w-full' : 'w-full min-w-0'}
-                               `}
-                               style={{
-                                 height: isMobile ? '210px' : '240px',
-                                 margin: isMobile ? '0 auto' : '0'
-                               }}
-                             >
-                               {/* Div para agrupar o conteúdo superior */}
-                               <div className="w-full">
-                                 {/* Título */}
-                                 <h3
-                                   className="font-medium text-black leading-tight"
-                                   style={{
-                                     fontSize: isMobile ? '20px' : '28px',
-                                     lineHeight: isMobile ? '24px' : '34px',
-                                     wordBreak: 'break-word',
-                                     overflow: 'hidden',
-                                     display: '-webkit-box',
-                                     WebkitLineClamp: 2,
-                                     WebkitBoxOrient: 'vertical'
-                                   }}
-                                 >
-                                   {c.title}
-                                 </h3>
-                                 {/* Data */}
-                                 <p
-                                   className="font-medium mt-2"
-                                   style={{
-                                     fontSize: isMobile ? '20px' : '28px',
-                                     lineHeight: isMobile ? '24px' : '34px',
-                                     color: '#67AF97',
-                                   }}
-                                 >
-                                   {c.date}
-                                 </p>
-                                 {/* Professor */}
-                                 <p
-                                   className="font-medium mt-2"
-                                   style={{
-                                     fontSize: isMobile ? '16px' : '22px',
-                                     lineHeight: isMobile ? '20px' : '26px',
-                                     color: '#000',
-                                     wordBreak: 'break-word',
-                                     overflow: 'hidden',
-                                     display: '-webkit-box',
-                                     WebkitLineClamp: 1,
-                                     WebkitBoxOrient: 'vertical'
-                                   }}
-                                 >
-                                   {c.teacher}
-                                 </p>
-                                 {/* Estúdio */}
-                                 <p
-                                   className="font-medium mt-2"
-                                   style={{
-                                     fontSize: isMobile ? '16px' : '22px',
-                                     lineHeight: isMobile ? '20px' : '26px',
-                                     color: '#000',
-                                     wordBreak: 'break-word',
-                                     overflow: 'hidden',
-                                     display: '-webkit-box',
-                                     WebkitLineClamp: 1,
-                                     WebkitBoxOrient: 'vertical'
-                                   }}
-                                 >
-                                   {c.studio}
-                                 </p>
-                               </div>
+    if (authError) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 font-inter p-4">
+                <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md w-full border border-red-100">
+                    <div className="flex justify-center mb-4 text-red-500">
+                        <AlertCircle size={48} />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Sessão Expirada</h2>
+                    <p className="text-gray-600 mb-6 text-sm">
+                        Sua sessão não é mais válida. Por favor, faça login novamente.
+                    </p>
+                    <button onClick={handleLogout} className="w-full bg-[#67AF97] hover:bg-[#559e85] text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2">
+                        <LogOut size={18} /> Ir para Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-                               {/* Botão Solicitar Reagendamento */}
-                               <button
-                                 onClick={() => handleOpenReschedule(c)}
-                                 className="px-4 py-2 rounded-md font-medium text-white hover:opacity-90 transition-opacity"
-                                 style={{
-                                   backgroundColor: '#67AF97',
-                                   fontSize: isMobile ? '16px' : '16px',
-                                 }}
-                               >
-                                 Solicitar Reagendamento
-                               </button>
-                             </article>
-                           ))}
-                         </div>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               </div>
+    return (
+        <div className="flex min-h-screen bg-gray-50 font-inter">
+            <SidebarUnificada
+                menuItems={sidebarConfigs.aluno.menuItems}
+                userInfo={sidebarConfigs.aluno.userInfo}
+                isOpen={menuOpen}
+                onOpenChange={setMenuOpen}
+            />
 
-               {/* Paginação */}
-               {pagesCount > 1 && (
-                 <div className="flex justify-center w-full pt-6 pb-4 md:pt-8 md:pb-6">
-                   <div className="flex gap-4 items-center">
-                     <button
-                       onClick={() => goToPage(currentPage - 1)}
-                       disabled={currentPage === 0}
-                       className={`w-8 h-8 border rounded-md flex items-center justify-center font-medium ${
-                         currentPage === 0
-                           ? 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed'
-                           : 'bg-[#FEFEFE] border-black text-black hover:bg-gray-50'
-                       }`}
-                       aria-label="Página anterior"
-                     >
-                       ←
-                     </button>
-                     {Array.from({ length: pagesCount }).map((_, idx) => {
-                       const active = idx === currentPage;
-                       return (
-                         <button
-                           key={idx}
-                           onClick={() => goToPage(idx)}
-                           className={`w-[27px] h-[30px] border rounded-md flex items-center justify-center font-medium ${
-                             active
-                               ? 'bg-[#67AF97] border-[#67AF97] text-white'
-                               : 'bg-[#FEFEFE] border-black text-black hover:bg-gray-50'
-                           }`}
-                           aria-current={active ? 'page' : undefined}
-                           aria-label={`Página ${idx + 1}`}
-                         >
-                           {idx + 1}
-                         </button>
-                       );
-                     })}
-                     <button
-                       onClick={() => goToPage(currentPage + 1)}
-                       disabled={currentPage === pagesCount - 1}
-                       className={`w-8 h-8 border rounded-md flex items-center justify-center font-medium ${
-                         currentPage === pagesCount - 1
-                           ? 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed'
-                           : 'bg-[#FEFEFE] border-black text-black hover:bg-gray-50'
-                       }`}
-                       aria-label="Próxima página"
-                     >
-                       →
-                     </button>
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
+            <div className="flex flex-col flex-1 transition-all duration-300 min-w-0" style={{ marginLeft: !isMobile ? `${sidebarWidth}px` : "0", width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%" }}>
+                <main className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 pt-20 sm:pt-6">
+                    <div className="w-full max-w-7xl mx-auto">
+                        
+                        <div className="mb-8 border-b pb-4 flex justify-between items-end">
+                            <div>
+                                <h2 className="font-bold text-gray-900 text-2xl sm:text-3xl">Minhas Aulas</h2>
+                                <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie seus horários e solicitações</p>
+                            </div>
+                        </div>
 
-           {/* Tabela de Solicitações de Reagendamento */}
-           <RescheduleRequestsTable
-             requests={rescheduleRequests}
-             onUpdateRequestStatus={handleUpdateRequestStatus}
-             isMobile={isMobile}
-           />
-         </div>
-       </main>
-     </div>
+                        <MonthYearSelector 
+                            month={currentMonth} 
+                            year={currentYear} 
+                            onMonthChange={setCurrentMonth} 
+                            onYearChange={setCurrentYear} 
+                        />
 
-     {/* Popup de Solicitação de Reagendamento */}
-     <RescheduleRequestPopup
-       isOpen={reschedulePopup.isOpen}
-       onClose={handleCloseReschedule}
-       classData={reschedulePopup.classData}
-       onSubmitRequest={handleSubmitRescheduleRequest}
-     />
-   </div>
- );
+                        {isLoading ? (
+                            <div className="text-center py-20 bg-white rounded-lg shadow-sm border border-gray-100">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#67AF97] mx-auto mb-3"></div>
+                                <p className="text-gray-500">Carregando sua agenda...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {classes.length === 0 ? (
+                                    <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center">
+                                        <Calendar className="text-gray-300 mb-3" size={48} />
+                                        <p className="text-gray-500 font-medium">Nenhuma aula encontrada para este mês.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                                        {classes.map((item) => (
+                                            <ClassCard
+                                                key={item.id}
+                                                id={item.id}
+                                                sqlId={item.sqlId} // Passando ID correto
+                                                modality={item.modality}
+                                                date={item.date}
+                                                time={item.time}
+                                                fullDate={item.fullDate}
+                                                onReschedule={handleOpenReschedule}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        <RescheduleRequestsTable 
+                            requests={rescheduleRequests} 
+                            isLoading={isLoadingRequests}
+                        />
+                    </div>
+                </main>
+            </div>
+
+            <RescheduleRequestPopup 
+                isOpen={reschedulePopup.isOpen}
+                onClose={handleCloseReschedule}
+                classData={reschedulePopup.classData}
+                onSubmitRequest={handleSubmitReschedule}
+                isLoading={isSubmittingRequest}
+            />
+        </div>
+    );
 }

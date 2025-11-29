@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, IdCard, Calendar, FileBadge, AtSign, ChevronDown, Building, MapPin, Home, Briefcase, HeartPulse } from 'lucide-react';
-import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg';
+import Logo_Sem_Contorno from '../../../assets/Logo_Sem_Contorno.svg'; //por algum motivo esse icone não aparece no meu pc //Jhon msg XDXD
 import api from '../../../services/api';
 
 const StudentSignIn = () => {
@@ -12,6 +12,10 @@ const StudentSignIn = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState(null);
     const navigate = useNavigate();
+
+    
+
+
 
     const [formData, setFormData] = useState({
         user_data: {
@@ -83,13 +87,15 @@ const StudentSignIn = () => {
             setIsLoading(false);
             return;
         }
-        
         try {
-            await api.post('/alunos/createAluno', formData, {
+            const response = await api.post('/alunos/createAluno', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
+            const estudanteId = response.data.estudante.id_estudante;
+            
             setCadastroSucesso(true);
-            setTimeout(() => navigate('/aluno/dashboard'), 1000);
+            setTimeout(() => navigate('/admin/selecao-plano', { state: { estudanteId: estudanteId } }), 1000); 
 
         } catch (error) {
             const errorMessage = error.response?.data?.detail || "Erro ao cadastrar aluno.";
@@ -97,6 +103,20 @@ const StudentSignIn = () => {
         } finally {
             setIsLoading(false);
         }
+        //Pode se pagado se necessário... mas é costume meu deixar esse tipo de código não usado.... sindrome do vira-lata bateu forte agr
+        // try {
+        //     await api.post('/alunos/createAluno', formData, {
+        //         headers: { Authorization: `Bearer ${token}` }
+        //     });
+        //     setCadastroSucesso(true);
+        //     setTimeout(() => navigate('/aluno/dashboard'), 1000);
+
+        // } catch (error) {
+        //     const errorMessage = error.response?.data?.detail || "Erro ao cadastrar aluno.";
+        //     setMessage({ text: errorMessage, type: 'error' });
+        // } finally {
+        //     setIsLoading(false);
+        // }
     };
 
     const renderMessage = () => {

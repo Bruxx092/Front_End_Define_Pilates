@@ -1,85 +1,123 @@
 import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
-
-// Dados de exemplo dos estudantes
-const sampleStudents = [
-  { 
-    id: 1, 
-    name: 'João Oliveira Silva', 
-    modality: 'Yoga'
-  },
-  { 
-    id: 2, 
-    name: 'Maria Eduarda Santos', 
-    modality: 'Pilates'
-  },
-  { 
-    id: 3, 
-    name: 'Pedro Carvalho Silva', 
-    modality: 'Curso'
-  },
-  { 
-    id: 4, 
-    name: 'Gabriel Marques da Silva', 
-    modality: 'Yoga'
-  },
-  { 
-    id: 5, 
-    name: 'Allan Martins Silva', 
-    modality: 'Pilates'
-  },
-  { 
-    id: 6, 
-    name: 'Ana Carolina Lima', 
-    modality: 'Curso'
-  },
-  { 
-    id: 7, 
-    name: 'Ana Lima', 
-    modality: 'Yoga'
-  },
-  { 
-    id: 8, 
-    name: 'Carlos Eduardo Rocha', 
-    modality: 'Pilates'
-  },
-  { 
-    id: 9, 
-    name: 'Fernanda Costa Oliveira', 
-    modality: 'Curso'
-  },
-];
+import api from "@/services/api";
+import { format, addYears, subYears } from "date-fns";
+import { useNavigate } from "react-router-dom"; 
 
 export default function MeusEstudantes() {
-  const [students, setStudents] = useState(sampleStudents);
-  const [filteredStudents, setFilteredStudents] = useState(sampleStudents);
+  const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalityFilter, setModalityFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const { isMobile, sidebarWidth } = useSidebar();
+  const navigate = useNavigate();
+
+  // Função para buscar os alunos do instrutor
+  useEffect(() => {
+    const fetchMyStudents = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const startDate = format(subYears(new Date(), 2), 'yyyy-MM-dd');
+        const endDate = format(addYears(new Date(), 1), 'yyyy-MM-dd');
+
+        const responseAulas = await api.get('/agenda/minhas_aulas', {
+          params: { start_date: startDate, end_date: endDate }
+        });
+
+        const aulas = responseAulas.data;
+        const uniqueStudentMap = new Map();
+
+        aulas.forEach((aula) => {
+          const participantes = aula.participantes || aula.participantes_ids || [];
+          
+          if (Array.isArray(participantes)) {
+            participantes.forEach((studentId) => {
+              if (!uniqueStudentMap.has(studentId)) {
+                uniqueStudentMap.set(studentId, {
+                  id: studentId,
+                  name: `Carregando...`, 
+                  modality: aula.disciplina || 'Geral',
+                  lastClassDate: aula.dataAgendaAula 
+                });
+              }
+            });
+          }
+        });
+
+        let studentsList = Array.from(uniqueStudentMap.values());
+
+        const enrichedStudents = await Promise.all(
+          studentsList.map(async (student) => {
+            try {
+              const responseName = await api.get(`/alunos/aluno-instrutor/${student.id}`, {
+                params: {
+                  estudante_id: student.id 
+                }
+              });
+              
+              if (responseName.data && responseName.data.name_user) {
+                return {
+                  ...student,
+                  name: responseName.data.name_user, 
+                  photo: responseName.data.foto_user
+                };
+              }
+            } catch (err) {
+              console.warn(`Não foi possível obter nome para o ID ${student.id}`, err);
+              return {
+                ...student,
+                name: `Estudante #${student.id}`
+              };
+            }
+            return student;
+          })
+        );
+        
+        enrichedStudents.sort((a, b) => a.name.localeCompare(b.name));
+        
+        setStudents(enrichedStudents);
+        setFilteredStudents(enrichedStudents);
+
+      } catch (err) {
+        console.error("Erro ao buscar lista de alunos:", err);
+        if (err.response && err.response.status === 403) {
+             setError("Sessão expirada ou sem permissão. Tente recarregar.");
+        } else {
+             setError("Não foi possível carregar a lista de alunos.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyStudents();
+  }, []);
 
   // Filtros e busca
   useEffect(() => {
     let result = students;
     
-    // Filtro por busca
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(student => 
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.modality.toLowerCase().includes(searchTerm.toLowerCase())
+        student.name.toLowerCase().includes(term) ||
+        student.modality.toLowerCase().includes(term) ||
+        String(student.id).includes(term)
       );
     }
     
-    // Filtro por modalidade
     if (modalityFilter) {
-      result = result.filter(student => student.modality === modalityFilter);
+      result = result.filter(student => student.modality.toLowerCase() === modalityFilter.toLowerCase());
     }
     
-    // Ordenação
     if (sortBy) {
       result = [...result].sort((a, b) => {
         if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -91,15 +129,15 @@ export default function MeusEstudantes() {
     setFilteredStudents(result);
   }, [students, searchTerm, modalityFilter, sortBy]);
 
-  // Função para visualizar ficha técnica
   const handleViewTechnicalSheet = (student) => {
-    console.log(`Visualizando ficha técnica de ${student.name}`);
-    // Aqui você pode implementar a navegação para a ficha técnica ou abrir um modal
+    // Envia os dados do aluno via STATE para que a próxima tela não precise depender 100% da API que está falhando
+    navigate(`/instrutor/ficha-tecnica/${student.id}`, { 
+        state: { studentData: student } 
+    });
   };
 
   return (
     <div className="flex min-h-screen bg-[#F6F9FF] font-inter">
-      {/* Componente da Sidebar com navbar do instrutor */}
       <SidebarUnificada
         menuItems={sidebarConfigs.instrutor.menuItems}
         userInfo={sidebarConfigs.instrutor.userInfo}
@@ -107,7 +145,6 @@ export default function MeusEstudantes() {
         onOpenChange={setMenuOpen}
       />
 
-      {/* Container do conteúdo principal */}
       <div
         className="flex flex-col flex-1 transition-all duration-300 min-w-0"
         style={{
@@ -115,19 +152,16 @@ export default function MeusEstudantes() {
           width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%",
         }}
       >
-        {/* Conteúdo específico da página Meus Estudantes */}
         <main className="flex-1 flex items-center justify-center py-4 px-3 sm:px-4 lg:px-6 pt-20 sm:pt-6 lg:py-8 pb-6 sm:pb-8">
           <div className={`bg-white rounded-3xl shadow-lg ${isMobile ? 'w-full mx-auto p-4' : 'w-full max-w-7xl mx-auto p-8'}`}>
             
-            {/* Cabeçalho */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 lg:mb-8">
               <h1 className={`font-bold text-[#111111] ${isMobile ? 'text-2xl mb-4' : 'text-[28px]'}`}>
                 Meus Alunos
               </h1>
               
-              {/* Barra de pesquisa e Filtros */}
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* Barra de pesquisa */}
+                {/* Search Input */}
                 <div className="relative">
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                     <svg className="w-4 h-4 text-[#313A4E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,14 +170,14 @@ export default function MeusEstudantes() {
                   </div>
                   <input
                     type="text"
-                    placeholder="Pesquisar por..."
+                    placeholder="Buscar por nome..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full sm:w-60 pl-10 pr-4 py-2 border border-[#E1E1E1] rounded-lg bg-white text-[#313A4E] placeholder-[#313A4E] focus:outline-none focus:ring-2 focus:ring-[#2B668B] focus:border-transparent"
                   />
                 </div>
 
-                {/* Filtro por modalidade */}
+                {/* Modality Filter */}
                 <div className="relative">
                   <select
                     value={modalityFilter}
@@ -154,6 +188,7 @@ export default function MeusEstudantes() {
                     <option value="Yoga">Yoga</option>
                     <option value="Pilates">Pilates</option>
                     <option value="Curso">Curso</option>
+                    <option value="Geral">Geral</option>
                   </select>
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                     <svg className="w-4 h-4 text-[#313A4E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +197,7 @@ export default function MeusEstudantes() {
                   </div>
                 </div>
 
-                {/* Ordenar por */}
+                {/* Sort Filter */}
                 <div className="relative">
                   <select
                     value={sortBy}
@@ -182,9 +217,15 @@ export default function MeusEstudantes() {
               </div>
             </div>
 
-            {/* Tabela de estudantes */}
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                <p>{error}</p>
+              </div>
+            )}
+
+            {/* Students Table */}
             <div className="overflow-hidden">
-              {/* Cabeçalho da tabela - apenas desktop */}
               {!isMobile && (
                 <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-[#F4F4F4] rounded-t-3xl bg-white">
                   <div className="col-span-6">
@@ -199,11 +240,15 @@ export default function MeusEstudantes() {
                 </div>
               )}
 
-              {/* Corpo da tabela */}
               <div className="bg-white">
-                {filteredStudents.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B668B]"></div>
+                    <p className="mt-2 text-[#6B6F7B]">Carregando seus alunos...</p>
+                  </div>
+                ) : filteredStudents.length === 0 ? (
                   <div className="text-center py-8 text-[#6B6F7B]">
-                    Nenhum estudante encontrado
+                    Nenhum estudante encontrado em suas aulas recentes.
                   </div>
                 ) : (
                   filteredStudents.map((student) => (
@@ -213,7 +258,6 @@ export default function MeusEstudantes() {
                     >
                       {isMobile ? (
                         <>
-                          {/* Mobile Layout */}
                           <div className="flex justify-between items-center gap-4">
                             <span className="text-[#6B6F7B] font-medium flex-shrink-0">Nome:</span>
                             <span className="font-semibold text-[#313A4E] text-right truncate">
@@ -229,18 +273,16 @@ export default function MeusEstudantes() {
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            <span className="text-[#6B6F7B] font-medium">Ficha Técnica:</span>
                             <button
                               onClick={() => handleViewTechnicalSheet(student)}
                               className="px-4 py-1 bg-[#2B668B] text-white text-[16px] font-semibold rounded-full hover:bg-[#1e4d6b] transition-colors w-fit"
                             >
-                              Visualizar
+                              Ver Ficha
                             </button>
                           </div>
                         </>
                       ) : (
                         <>
-                          {/* Desktop Layout */}
                           <div className="col-span-6">
                             <span className="font-semibold text-[#313A4E]">
                               {student.name}
@@ -258,7 +300,7 @@ export default function MeusEstudantes() {
                               onClick={() => handleViewTechnicalSheet(student)}
                               className="px-6 py-1 bg-[#2B668B] text-white text-[16px] font-semibold rounded-full hover:bg-[#1e4d6b] transition-colors"
                             >
-                              Visualizar
+                              Ver Ficha
                             </button>
                           </div>
                         </>

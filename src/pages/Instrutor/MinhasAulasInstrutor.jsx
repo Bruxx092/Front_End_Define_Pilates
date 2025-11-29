@@ -2,153 +2,74 @@ import SidebarUnificada from "@/components/layout/Sidebar/SidebarUnificada";
 import { sidebarConfigs } from "@/components/layout/Sidebar/sidebarConfigs";
 import React, { useState, useEffect } from 'react';
 import { useSidebar } from "@/context/SidebarContext";
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Calendar, AlertCircle } from 'lucide-react';
+import api from '../../services/api';
 
-// Dados de exemplo das aulas
-const sampleClasses = [
-    { id: 1, modality: 'Pilates', date: '02/09', time: '08:00', studio: 'Estudio Ghibli' },
-    { id: 2, modality: 'Yoga', date: '02/09', time: '10:00', studio: 'Estudio Central' },
-    { id: 3, modality: 'Curso', date: '02/09', time: '14:00', studio: 'Estudio Norte' },
-    { id: 4, modality: 'Pilates', date: '03/09', time: '09:00', studio: 'Estudio Ghibli' },
-    { id: 5, modality: 'Yoga', date: '03/09', time: '11:00', studio: 'Estudio Central' },
-    { id: 6, modality: 'Curso', date: '04/09', time: '15:00', studio: 'Estudio Norte' },
-    { id: 7, modality: 'Pilates', date: '04/09', time: '16:00', studio: 'Estudio Ghibli' },
-    { id: 8, modality: 'Yoga', date: '05/09', time: '08:30', studio: 'Estudio Central' },
-];
+// --- COMPONENTES UI ---
 
-// Dias que devem ser destacados (dias que têm aulas)
-const getDaysWithClasses = (classes) => {
-    const days = new Set();
-    classes.forEach(classItem => {
-        const day = parseInt(classItem.date.split('/')[0]);
-        days.add(day);
-    });
-    return days;
-};
-
-// Cores do design
-const darkBlueBg = 'bg-[#3A4A9B]';
-const whiteText = 'text-white';
-const blackText = 'text-black';
-
-// Componente para o Calendário
-const CalendarGrid = ({ 
-    month, 
-    year, 
-    selectedDay, 
-    onDaySelect, 
-    onMonthChange,
-    onYearChange,
-    daysWithClasses
-}) => {
-    const daysInMonth = (m, y) => new Date(y, m + 1, 0).getDate();
-    const firstDayOfMonth = (m, y) => new Date(y, m, 1).getDay();
-
-    const totalDays = daysInMonth(month, year);
-    const startDay = firstDayOfMonth(month, year);
+const MonthYearSelector = ({ month, year, onMonthChange, onYearChange }) => {
     const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
-    const daysArray = [];
-    for (let i = 0; i < startDay; i++) {
-        daysArray.push(null);
-    }
-    for (let i = 1; i <= totalDays; i++) {
-        daysArray.push(i);
-    }
-
-    const weeks = [];
-    for (let i = 0; i < daysArray.length; i += 7) {
-        weeks.push(daysArray.slice(i, i + 7));
-    }
 
     return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-4 px-4 sm:px-0">
-                <div className="relative inline-block w-36 sm:w-40">
-                    <select 
-                        value={month} 
-                        onChange={onMonthChange}
-                        className="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-8 text-lg font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97]"
-                    >
-                        {monthNames.map((name, index) => (
-                            <option key={index} value={index}>{name}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={20} />
-                </div>
-                <div className="relative inline-block w-28 sm:w-32">
-                    <select 
-                        value={year} 
-                        onChange={onYearChange}
-                        className="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-8 text-lg font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97]"
-                    >
-                        {Array.from({ length: 5 }, (_, i) => 2023 + i).map((y) => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={20} />
-                </div>
+        <div className="flex flex-wrap gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2">
+                <Calendar className="text-[#67AF97]" size={20} />
+                <span className="font-medium text-gray-700">Filtrar por:</span>
             </div>
-
-            <div className="grid grid-cols-7 border border-gray-300 rounded-lg overflow-hidden text-lg">
-                {weekdays.map(day => (
-                    <div key={day} className="py-3 bg-gray-50 border-b border-r border-gray-300 last:border-r-0 text-center font-semibold text-gray-700 text-sm sm:text-base">
-                        {day}
-                    </div>
-                ))}
-
-                {weeks.map((week, weekIndex) => {
-                    return week.map((day, dayIndex) => {
-                        const hasClass = daysWithClasses.has(day);
-                        const isSelected = day === selectedDay;
-                        
-                        const dayBg = isSelected ? darkBlueBg : hasClass ? 'bg-blue-100' : 'bg-white';
-                        const textColor = isSelected ? whiteText : blackText;
-
-                        const isLastCol = dayIndex === 6;
-                        const isLastRow = weekIndex === weeks.length - 1;
-
-                        return (
-                            <div 
-                                key={`${weekIndex}-${dayIndex}`} 
-                                className={`
-                                    p-2 text-center font-semibold cursor-pointer h-16 sm:h-20
-                                    flex items-center justify-center text-lg sm:text-xl
-                                    ${dayBg} ${textColor}
-                                    ${!isLastCol ? 'border-r' : ''}
-                                    ${!isLastRow ? 'border-b' : ''}
-                                    border-gray-300
-                                    ${day === null ? 'text-transparent' : ''}
-                                    transition-colors duration-200
-                                `}
-                                onClick={() => day !== null && onDaySelect(day)}
-                            >
-                                {day}
-                                {hasClass && !isSelected && (
-                                    <div className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full"></div>
-                                )}
-                            </div>
-                        );
-                    });
-                })}
+            <div className="relative inline-block w-40">
+                <select 
+                    value={month} 
+                    onChange={(e) => onMonthChange(parseInt(e.target.value))} 
+                    className="appearance-none bg-gray-50 border border-gray-300 rounded-md py-2 pl-3 pr-8 text-base font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97] text-gray-700 cursor-pointer"
+                >
+                    {monthNames.map((name, index) => (
+                        <option key={index} value={index}>{name}</option>
+                    ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+            </div>
+            <div className="relative inline-block w-32">
+                <select 
+                    value={year} 
+                    onChange={(e) => onYearChange(parseInt(e.target.value))} 
+                    className="appearance-none bg-gray-50 border border-gray-300 rounded-md py-2 pl-3 pr-8 text-base font-medium w-full focus:outline-none focus:ring-2 focus:ring-[#67AF97] text-gray-700 cursor-pointer"
+                >
+                    {Array.from({ length: 5 }, (_, i) => 2024 + i).map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
             </div>
         </div>
     );
 };
 
-// Componente para um card de aula individual
-const ClassCard = ({ modality, date, time, studio }) => {
+const ClassCard = ({ id, modality, date, time, studio, numAlunos }) => {
     return (
-        <article className="bg-[#FEFEFE] border border-gray-200 rounded-lg shadow-sm p-4 text-center flex flex-col justify-between h-40 sm:h-44">
-            <div>
-                <h3 className="font-semibold text-gray-900 leading-tight text-xl sm:text-2xl mb-3">
+        <article className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-5 flex flex-col justify-between h-48 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-[#67AF97]"></div>
+            
+            <div className="flex flex-col items-center flex-grow justify-center">
+                <h3 className="font-bold text-gray-800 text-xl mb-1 text-center line-clamp-2">
                     {modality}
                 </h3>
-                <p className="font-medium text-lg sm:text-xl text-[#67AF97] mb-2">
-                    {date} - {time}
+                
+                <p className="text-sm text-gray-500 mb-3">
+                    {numAlunos > 0 ? `${numAlunos} Aluno(s)` : 'Sem alunos matriculados'}
                 </p>
-                <p className="font-medium text-black text-base sm:text-lg">
+                
+                <div className="flex gap-6 text-center mb-2">
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Data</span>
+                        <span className="text-lg font-medium text-[#67AF97]">{date}</span>
+                    </div>
+                    <div className="w-px bg-gray-200"></div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Horário</span>
+                        <span className="text-lg font-medium text-gray-800">{time}</span>
+                    </div>
+                </div>
+                 <p className="font-medium text-black text-sm sm:text-base mt-2 text-center">
                     {studio}
                 </p>
             </div>
@@ -156,47 +77,91 @@ const ClassCard = ({ modality, date, time, studio }) => {
     );
 };
 
-// Componente principal da página
+// --- PÁGINA PRINCIPAL ---
+
 export default function MinhasAulasInstrutor() {
     const [menuOpen, setMenuOpen] = useState(false);
     const { isMobile, sidebarWidth } = useSidebar();
-    const [currentMonth, setCurrentMonth] = useState(8); // Setembro (0-indexed)
-    const [currentYear, setCurrentYear] = useState(2024);
-    const [selectedDay, setSelectedDay] = useState(null);
-    const [filteredClasses, setFilteredClasses] = useState(sampleClasses);
+    
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+    
+    const [classes, setClasses] = useState([]); 
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorState, setErrorState] = useState(null);
 
-    const daysWithClasses = getDaysWithClasses(sampleClasses);
+    // Busca aulas ao carregar ou mudar filtro
+    useEffect(() => {
+        fetchMyClasses();
+    }, [currentMonth, currentYear]);
 
-    const handleDaySelect = (day) => {
-        setSelectedDay(day);
-        
-        // Filtrar aulas pelo dia selecionado
-        if (day) {
-            const dayString = day.toString().padStart(2, '0');
-            const filtered = sampleClasses.filter(classItem => 
-                classItem.date.startsWith(dayString)
-            );
-            setFilteredClasses(filtered);
-        } else {
-            setFilteredClasses(sampleClasses);
+    const fetchMyClasses = async () => {
+        setIsLoading(true);
+        setErrorState(null);
+        try {
+            // Calcula o período do mês selecionado
+            const startDate = new Date(currentYear, currentMonth, 1);
+            const endDate = new Date(currentYear, currentMonth + 1, 0);
+
+            const startStr = startDate.toISOString().split('T')[0];
+            const endStr = endDate.toISOString().split('T')[0];
+
+            // O backend já filtra as aulas pelo usuário logado (token)
+            const response = await api.get('/agenda/minhas_aulas', {
+                params: { 
+                    start_date: startStr,
+                    end_date: endStr
+                }
+            });
+            
+            const data = response.data;
+            
+            if (data && Array.isArray(data)) {
+                const formattedClasses = data.map((cls, index) => {
+                    const rawDate = cls.dataAgendaAula || cls.data_aula;
+                    const dateObj = new Date(rawDate);
+                    const isValidDate = dateObj instanceof Date && !isNaN(dateObj.getTime());
+                    
+                    const day = isValidDate ? String(dateObj.getDate()).padStart(2, '0') : '--';
+                    const month = isValidDate ? String(dateObj.getMonth() + 1).padStart(2, '0') : '--';
+                    const formattedDate = `${day}/${month}`;
+                    
+                    const hours = isValidDate ? String(dateObj.getHours()).padStart(2, '0') : '--';
+                    const minutes = isValidDate ? String(dateObj.getMinutes()).padStart(2, '0') : '--';
+                    const timeStr = `${hours}:${minutes}`;
+
+                    // Tenta resolver o nome do estúdio com fallback
+                    const studioName = cls.EstudioID === 1 ? 'Estúdio Itaquera' : (cls.EstudioID === 2 ? 'Estúdio São Miguel' : 'Estúdio Pilates');
+
+                    return {
+                        id: cls.AulaID || cls._id || index,
+                        modality: cls.disciplina || cls.tituloAulaCompleto || cls.titulo_aula || 'Aula',
+                        date: formattedDate,
+                        time: timeStr,
+                        studio: studioName,
+                        numAlunos: cls.participantes ? cls.participantes.length : 0,
+                        fullDate: isValidDate ? dateObj : new Date()
+                    };
+                });
+                
+                // Ordenar por data
+                formattedClasses.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
+                
+                setClasses(formattedClasses);
+            } else {
+                setClasses([]);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar aulas do instrutor:", error);
+            setErrorState("Erro ao carregar agenda. Tente novamente.");
+            setClasses([]);
+        } finally {
+            setIsLoading(false);
         }
-    };
-
-    const handleMonthChange = (e) => {
-        setCurrentMonth(parseInt(e.target.value));
-        setSelectedDay(null);
-        setFilteredClasses(sampleClasses);
-    };
-
-    const handleYearChange = (e) => {
-        setCurrentYear(parseInt(e.target.value));
-        setSelectedDay(null);
-        setFilteredClasses(sampleClasses);
     };
 
     return (
         <div className="flex min-h-screen bg-gray-50 font-inter">
-            {/* Componente da Sidebar do Instrutor */}
             <SidebarUnificada
                 menuItems={sidebarConfigs.instrutor.menuItems}
                 userInfo={sidebarConfigs.instrutor.userInfo}
@@ -204,68 +169,56 @@ export default function MinhasAulasInstrutor() {
                 onOpenChange={setMenuOpen}
             />
 
-            {/* Container do conteúdo principal */}
-            <div
-                className="flex flex-col flex-1 transition-all duration-300 min-w-0"
-                style={{
-                    marginLeft: !isMobile ? `${sidebarWidth}px` : "0",
-                    width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%",
-                }}
-            >
+            <div className="flex flex-col flex-1 transition-all duration-300 min-w-0" style={{ marginLeft: !isMobile ? `${sidebarWidth}px` : "0", width: !isMobile ? `calc(100% - ${sidebarWidth}px)` : "100%" }}>
                 <main className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 pt-20 sm:pt-6">
-                    {/* Container do calendário e dos cards */}
-                    <div className="bg-white rounded-lg shadow-lg flex flex-col p-4 sm:p-6 lg:p-8 w-full max-w-full lg:max-w-7xl mx-auto">
-
-                        {/* Cabeçalho */}
-                        <div className="mb-6 text-center">
-                            <h2 className="font-semibold text-gray-900 text-2xl sm:text-3xl lg:text-4xl">
-                                Minhas Aulas
-                            </h2>
-                            {selectedDay && (
-                                <p className="text-lg text-gray-600 mt-2">
-                                    Aulas do dia {selectedDay.toString().padStart(2, '0')}/{String(currentMonth + 1).padStart(2, '0')}
-                                </p>
-                            )}
+                    <div className="w-full max-w-7xl mx-auto">
+                        
+                        <div className="mb-8 border-b pb-4">
+                            <h2 className="font-bold text-gray-900 text-2xl sm:text-3xl">Minhas Aulas</h2>
+                            <p className="text-gray-500 mt-1 text-sm sm:text-base">Confira sua agenda de aulas atribuídas</p>
                         </div>
 
-                        {/* Calendário */}
-                        <div className="mb-8">
-                            <CalendarGrid 
-                                month={currentMonth} 
-                                year={currentYear} 
-                                selectedDay={selectedDay}
-                                onDaySelect={handleDaySelect}
-                                onMonthChange={handleMonthChange}
-                                onYearChange={handleYearChange}
-                                daysWithClasses={daysWithClasses}
-                            />
-                        </div>
+                        <MonthYearSelector 
+                            month={currentMonth} 
+                            year={currentYear} 
+                            onMonthChange={setCurrentMonth} 
+                            onYearChange={setCurrentYear} 
+                        />
 
-                        {/* Grid de Aulas Responsivo */}
-                        <div>
-                            <h3 className="font-semibold text-gray-900 text-xl sm:text-2xl mb-4">
-                                {selectedDay ? 'Aulas do Dia' : 'Todas as Aulas'}
-                            </h3>
-                            
-                            {filteredClasses.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
-                                    Nenhuma aula encontrada para este dia
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                                    {filteredClasses.map((classItem) => (
-                                        <ClassCard
-                                            key={classItem.id}
-                                            modality={classItem.modality}
-                                            date={classItem.date}
-                                            time={classItem.time}
-                                            studio={classItem.studio}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
+                        {isLoading ? (
+                            <div className="text-center py-20 bg-white rounded-lg shadow-sm border border-gray-100">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#67AF97] mx-auto mb-3"></div>
+                                <p className="text-gray-500">Carregando sua agenda...</p>
+                            </div>
+                        ) : errorState ? (
+                             <div className="text-center py-16 bg-red-50 rounded-lg border border-red-200 flex flex-col items-center text-red-600">
+                                <AlertCircle size={48} className="mb-2" />
+                                <p>{errorState}</p>
+                            </div>
+                        ) : (
+                            <>
+                                {classes.length === 0 ? (
+                                    <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center">
+                                        <Calendar className="text-gray-300 mb-3" size={48} />
+                                        <p className="text-gray-500 font-medium">Nenhuma aula encontrada para este mês.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                                        {classes.map((item) => (
+                                            <ClassCard
+                                                key={item.id}
+                                                id={item.id}
+                                                modality={item.modality}
+                                                date={item.date}
+                                                time={item.time}
+                                                studio={item.studio}
+                                                numAlunos={item.numAlunos}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </main>
             </div>
